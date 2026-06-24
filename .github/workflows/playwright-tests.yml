@@ -2,9 +2,9 @@ name: Playwright E2E Tests + Allure Report
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -19,7 +19,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0        # full history needed for diff detection
+          fetch-depth: 0
 
       # ── 2. Node.js ────────────────────────────────────────────────
       - name: Setup Node.js 20
@@ -40,30 +40,29 @@ jobs:
       - name: Install Allure CLI
         run: npm install -g allure-commandline
 
-      # ── 6. Smart test detection ───────────────────────────────────
-      - name: Detect which tests to run
+      # ── 6. Detect which tests to run based on changed files ───────
+      - name: Detect changed files and set test scope
         id: scope
         run: |
           CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "all")
-          echo "Changed files:"
-          echo "$CHANGED"
+          echo "Changed files: $CHANGED"
 
-          if echo "$CHANGED" | grep -q "tests/login\|pages/LoginPage"; then
+          if echo "$CHANGED" | grep -q "tests/login\|pages/LoginPage\|test-data/loginData"; then
             echo "test_path=tests/login.spec.js" >> $GITHUB_OUTPUT
             echo "label=Login Module" >> $GITHUB_OUTPUT
           elif echo "$CHANGED" | grep -q "tests/dashboard\|pages/DashboardPage"; then
             echo "test_path=tests/dashboard.spec.js" >> $GITHUB_OUTPUT
             echo "label=Dashboard Module" >> $GITHUB_OUTPUT
-          elif echo "$CHANGED" | grep -q "tests/register"; then
+          elif echo "$CHANGED" | grep -q "tests/register\|pages/RegisterPage\|test-data/registerData"; then
             echo "test_path=tests/register.spec.js" >> $GITHUB_OUTPUT
             echo "label=Register Module" >> $GITHUB_OUTPUT
-          elif echo "$CHANGED" | grep -q "tests/profile"; then
+          elif echo "$CHANGED" | grep -q "tests/profile\|pages/ProfilePage\|test-data/profileData"; then
             echo "test_path=tests/profile.spec.js" >> $GITHUB_OUTPUT
             echo "label=Profile Module" >> $GITHUB_OUTPUT
-          elif echo "$CHANGED" | grep -q "tests/checkout"; then
+          elif echo "$CHANGED" | grep -q "tests/checkout\|pages/CheckoutPage\|test-data/checkoutData"; then
             echo "test_path=tests/checkout.spec.js" >> $GITHUB_OUTPUT
             echo "label=Checkout Module" >> $GITHUB_OUTPUT
-          elif echo "$CHANGED" | grep -q "tests/orders"; then
+          elif echo "$CHANGED" | grep -q "tests/orders\|pages/OrdersPage\|test-data/ordersData"; then
             echo "test_path=tests/orders.spec.js" >> $GITHUB_OUTPUT
             echo "label=Orders Module" >> $GITHUB_OUTPUT
           else
@@ -71,14 +70,15 @@ jobs:
             echo "label=Full Suite" >> $GITHUB_OUTPUT
           fi
 
-
       # ── 7. Run Playwright tests ───────────────────────────────────
-      - name: "Run: ${{ steps.scope.outputs.label }}"
+      - name: "Run tests — ${{ steps.scope.outputs.label }}"
         id: playwright
         run: |
           if [ "${{ steps.scope.outputs.test_path }}" = "all" ]; then
+            echo "▶ Running full test suite"
             npx playwright test
           else
+            echo "▶ Running: ${{ steps.scope.outputs.test_path }}"
             npx playwright test ${{ steps.scope.outputs.test_path }}
           fi
         continue-on-error: true
@@ -88,8 +88,8 @@ jobs:
         if: always()
         run: allure generate allure-results --clean -o allure-report
 
-      # ── 9. Upload Allure report artifact ──────────────────────────
-      - name: Upload Allure report
+      # ── 9. Upload Allure report as downloadable artifact ──────────
+      - name: Upload Allure report artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -97,8 +97,8 @@ jobs:
           path: allure-report/
           retention-days: 30
 
-      # ── 10. Upload Playwright HTML report artifact ────────────────
-      - name: Upload Playwright HTML report
+      # ── 10. Upload Playwright HTML report ─────────────────────────
+      - name: Upload Playwright HTML report artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -106,28 +106,15 @@ jobs:
           path: reports/html-report/
           retention-days: 30
 
-      # ── 11. Publish to gh-pages (main branch only) ────────────────
-      - name: Deploy Allure report to GitHub Pages
-        if: always() && github.ref == 'refs/heads/main'
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./allure-report
-          publish_branch: gh-pages
-          destination_dir: allure-report
-          keep_files: true
-
-      # ── 12. Job summary ───────────────────────────────────────────
+      # ── 11. Job summary ───────────────────────────────────────────
       - name: Write job summary
         if: always()
         run: |
-          echo "## 🧪 QA Test Run — Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## 🧪 QA Test Run — #${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
           echo "| | |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| **Branch** | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch** | \`main\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Triggered by** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Tests run** | ${{ steps.scope.outputs.label }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Run number** | #${{ github.run_number }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Triggered by** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Allure report** | See Artifacts tab ↑ |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Live report** | https://testqueens555.github.io/Customer_connect/allure-report |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Allure report** | Download from Artifacts tab ↑ |" >> $GITHUB_STEP_SUMMARY
