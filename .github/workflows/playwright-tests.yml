@@ -4,8 +4,8 @@ on:
   push:
     branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
-  workflow_dispatch:       # allow manual trigger from GitHub UI
+    branches: [ main, develop ]
+  workflow_dispatch:
 
 jobs:
   test:
@@ -15,118 +15,98 @@ jobs:
 
     steps:
 
-      # ── 1. Checkout code ─────────────────────────────────────────
+      # ── 1. Checkout ───────────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # full history needed for diff detection
 
-      # ── 2. Setup Node.js ─────────────────────────────────────────
-      - name: Setup Node.js
+      # ── 2. Node.js ────────────────────────────────────────────────
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      # ── 3. Install dependencies ───────────────────────────────────
-      - name: Install npm dependencies
+      # ── 3. Dependencies ───────────────────────────────────────────
+      - name: Install dependencies
         run: npm ci
 
-      # ── 4. Install Playwright browsers ───────────────────────────
-      - name: Install Playwright browsers
+      # ── 4. Playwright browser ─────────────────────────────────────
+      - name: Install Playwright + Chromium
         run: npx playwright install --with-deps chromium
 
-      # ── 5. Install Allure CLI ─────────────────────────────────────
+      # ── 5. Allure CLI ─────────────────────────────────────────────
       - name: Install Allure CLI
         run: npm install -g allure-commandline
 
-
-      # ── 6. Detect which tests to run ─────────────────────────────
-      - name: Detect changed test files
-        id: changed
+      # ── 6. Smart test detection ───────────────────────────────────
+      - name: Detect which tests to run
+        id: scope
         run: |
-          echo "Detecting changed files in push..."
+          CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "all")
+          echo "Changed files:"
+          echo "$CHANGED"
 
-          # Get list of changed files
-          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null || git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "all")
-
-          echo "Changed files: $CHANGED"
-
-          # Determine test scope based on changed files
-          if echo "$CHANGED" | grep -q "tests/login"; then
-            echo "scope=tests/login.spec.js" >> $GITHUB_OUTPUT
+          if echo "$CHANGED" | grep -q "tests/login\|pages/LoginPage"; then
+            echo "test_path=tests/login.spec.js" >> $GITHUB_OUTPUT
             echo "label=Login Module" >> $GITHUB_OUTPUT
-          elif echo "$CHANGED" | grep -q "tests/dashboard"; then
-            echo "scope=tests/dashboard.spec.js" >> $GITHUB_OUTPUT
+          elif echo "$CHANGED" | grep -q "tests/dashboard\|pages/DashboardPage"; then
+            echo "test_path=tests/dashboard.spec.js" >> $GITHUB_OUTPUT
             echo "label=Dashboard Module" >> $GITHUB_OUTPUT
           elif echo "$CHANGED" | grep -q "tests/register"; then
-            echo "scope=tests/register.spec.js" >> $GITHUB_OUTPUT
+            echo "test_path=tests/register.spec.js" >> $GITHUB_OUTPUT
             echo "label=Register Module" >> $GITHUB_OUTPUT
           elif echo "$CHANGED" | grep -q "tests/profile"; then
-            echo "scope=tests/profile.spec.js" >> $GITHUB_OUTPUT
+            echo "test_path=tests/profile.spec.js" >> $GITHUB_OUTPUT
             echo "label=Profile Module" >> $GITHUB_OUTPUT
           elif echo "$CHANGED" | grep -q "tests/checkout"; then
-            echo "scope=tests/checkout.spec.js" >> $GITHUB_OUTPUT
+            echo "test_path=tests/checkout.spec.js" >> $GITHUB_OUTPUT
             echo "label=Checkout Module" >> $GITHUB_OUTPUT
           elif echo "$CHANGED" | grep -q "tests/orders"; then
-            echo "scope=tests/orders.spec.js" >> $GITHUB_OUTPUT
+            echo "test_path=tests/orders.spec.js" >> $GITHUB_OUTPUT
             echo "label=Orders Module" >> $GITHUB_OUTPUT
-          elif echo "$CHANGED" | grep -q "pages/LoginPage"; then
-            echo "scope=tests/login.spec.js" >> $GITHUB_OUTPUT
-            echo "label=Login Module (page object changed)" >> $GITHUB_OUTPUT
-          elif echo "$CHANGED" | grep -q "pages/DashboardPage"; then
-            echo "scope=tests/dashboard.spec.js" >> $GITHUB_OUTPUT
-            echo "label=Dashboard Module (page object changed)" >> $GITHUB_OUTPUT
           else
-            echo "scope=all" >> $GITHUB_OUTPUT
+            echo "test_path=all" >> $GITHUB_OUTPUT
             echo "label=Full Suite" >> $GITHUB_OUTPUT
           fi
 
+
       # ── 7. Run Playwright tests ───────────────────────────────────
-      - name: Run Playwright tests (${{ steps.changed.outputs.label }})
+      - name: "Run: ${{ steps.scope.outputs.label }}"
+        id: playwright
         run: |
-          SCOPE="${{ steps.changed.outputs.scope }}"
-          if [ "$SCOPE" = "all" ]; then
-            echo "Running full test suite..."
+          if [ "${{ steps.scope.outputs.test_path }}" = "all" ]; then
             npx playwright test
           else
-            echo "Running targeted tests: $SCOPE"
-            npx playwright test $SCOPE
+            npx playwright test ${{ steps.scope.outputs.test_path }}
           fi
-        continue-on-error: true   # don't fail pipeline — let Allure report show failures
+        continue-on-error: true
 
-
-      # ── 8. Generate Allure HTML report ───────────────────────────
+      # ── 8. Generate Allure report ─────────────────────────────────
       - name: Generate Allure report
         if: always()
         run: allure generate allure-results --clean -o allure-report
 
-      # ── 9. Upload Allure report as artifact ───────────────────────
-      - name: Upload Allure report artifact
+      # ── 9. Upload Allure report artifact ──────────────────────────
+      - name: Upload Allure report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-report-${{ github.run_number }}
+          name: allure-report-run-${{ github.run_number }}
           path: allure-report/
           retention-days: 30
 
-      # ── 10. Upload Playwright HTML report as artifact ─────────────
+      # ── 10. Upload Playwright HTML report artifact ────────────────
       - name: Upload Playwright HTML report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-${{ github.run_number }}
+          name: playwright-report-run-${{ github.run_number }}
           path: reports/html-report/
           retention-days: 30
 
-      # ── 11. Upload test results JSON ──────────────────────────────
-      - name: Upload test results JSON
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results-json-${{ github.run_number }}
-          path: reports/test-results.json
-          retention-days: 30
-
-      # ── 12. Publish Allure report to GitHub Pages ─────────────────
+      # ── 11. Publish to gh-pages (main branch only) ────────────────
       - name: Deploy Allure report to GitHub Pages
         if: always() && github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v3
@@ -135,18 +115,19 @@ jobs:
           publish_dir: ./allure-report
           publish_branch: gh-pages
           destination_dir: allure-report
+          keep_files: true
 
-      # ── 13. Print test summary ────────────────────────────────────
-      - name: Print job summary
+      # ── 12. Job summary ───────────────────────────────────────────
+      - name: Write job summary
         if: always()
         run: |
-          echo "## 🧪 QA Test Run Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| **Trigger** | Push to \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "## 🧪 QA Test Run — Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| | |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch** | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Scope** | ${{ steps.changed.outputs.label }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Run #** | ${{ github.run_number }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Allure Report** | Download from Artifacts tab |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Pages Report** | https://testqueens555.github.io/Customer_connect/allure-report |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Tests run** | ${{ steps.scope.outputs.label }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Run number** | #${{ github.run_number }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Triggered by** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Allure report** | See Artifacts tab ↑ |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Live report** | https://testqueens555.github.io/Customer_connect/allure-report |" >> $GITHUB_STEP_SUMMARY
