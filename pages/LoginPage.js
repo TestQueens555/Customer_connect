@@ -3,43 +3,40 @@ const BasePage = require('./BasePage');
 class LoginPage extends BasePage {
   constructor(page) {
     super(page);
-
-    // ── Locators (Priority: role > label > placeholder > ID > CSS) ──
-    this.usernameInput = page.locator('#UserName, input[name="UserName"]');
-    this.passwordInput = page.locator('#Password, input[name="Password"]');
-    this.loginButton   = page.locator('input[type="submit"][value="Log in"], button[type="submit"]').first();
-    this.errorMessage  = page.locator('.validation-summary-errors, .field-validation-error, [class*="error"], [class*="alert"]').first();
-    this.pageHeading   = page.getByRole('heading').first();
+    // ── Locators — from live UI inspection ──────────────────────────
+    this.usernameInput  = page.locator('#UserName');
+    this.passwordInput  = page.locator('#Password');
+    this.rememberMe     = page.locator('#RememberMe');
+    this.signInButton   = page.locator('button[type="submit"]');
+    this.errorAlert     = page.locator('.kt-alert-destructive').first();
+    this.pageTitle      = page.locator('h1, h2, h3').first();
   }
 
   async enterUsername(username) { await this.usernameInput.fill(username); }
   async enterPassword(password) { await this.passwordInput.fill(password); }
+  async checkRememberMe()       { await this.rememberMe.check(); }
 
-  async clickLoginButton() {
-    await this.loginButton.click();
+  async clickSignIn() {
+    await this.signInButton.click();
     await this.page.waitForLoadState('networkidle');
   }
 
   async login(username, password) {
     await this.enterUsername(username);
     await this.enterPassword(password);
-    await this.clickLoginButton();
+    await this.clickSignIn();
   }
-
-  async clearUsername() { await this.usernameInput.clear(); }
-  async clearPassword() { await this.passwordInput.clear(); }
 
   async getErrorMessage() {
-    try { return await this.errorMessage.textContent(); } catch { return ''; }
+    try { return (await this.errorAlert.textContent()).trim(); } catch { return ''; }
   }
 
-  async isErrorVisible() {
-    try { return await this.errorMessage.isVisible(); } catch { return false; }
-  }
-
-  async isLoginButtonEnabled()  { return await this.loginButton.isEnabled(); }
-  async isUsernameFieldVisible() { return await this.usernameInput.isVisible(); }
-  async isPasswordFieldVisible() { return await this.passwordInput.isVisible(); }
+  async isErrorVisible()         { return await this.errorAlert.isVisible().catch(() => false); }
+  async isUsernameFieldVisible() { return await this.usernameInput.isVisible().catch(() => false); }
+  async isPasswordFieldVisible() { return await this.passwordInput.isVisible().catch(() => false); }
+  async isSignInButtonVisible()  { return await this.signInButton.isVisible().catch(() => false); }
+  async isRememberMeVisible()    { return await this.rememberMe.isVisible().catch(() => false); }
+  async getPasswordInputType()   { return await this.passwordInput.getAttribute('type'); }
   async getPageTitle()           { return await this.page.title(); }
 }
 
