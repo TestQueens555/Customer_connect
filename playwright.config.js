@@ -8,9 +8,16 @@ module.exports = defineConfig({
   workers:       1,
   reporter: [
     ['list'],
-    ['allure-playwright', { outputFolder: 'allure-results', detail: true, suiteTitle: false }],
-    ['html',  { outputFolder: 'reports/html-report', open: 'never' }],
-    ['json',  { outputFile:  'reports/test-results.json' }],
+    ['allure-playwright', {
+      outputFolder:  'allure-results',
+      suiteTitle:     true,
+      detail:         true,
+      links: {
+        issue: { urlTemplate: 'https://github.com/TestQueens555/Customer_connect/issues/%s' },
+      },
+    }],
+    ['html', { outputFolder: 'reports/html-report', open: 'never' }],
+    ['json', { outputFile:  'reports/test-results.json' }],
   ],
   use: {
     baseURL:    'http://customerportal.dev-ts.online',

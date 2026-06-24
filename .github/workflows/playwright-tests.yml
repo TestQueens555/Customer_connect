@@ -22,10 +22,10 @@ jobs:
           fetch-depth: 0
 
       # ── 2. Node.js ────────────────────────────────────────────────
-      - name: Setup Node.js 20
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       # ── 3. Dependencies ───────────────────────────────────────────
@@ -40,7 +40,7 @@ jobs:
       - name: Install Allure CLI
         run: npm install -g allure-commandline
 
-      # ── 6. Detect which tests to run based on changed files ───────
+      # ── 6. Detect which tests to run ──────────────────────────────
       - name: Detect changed files and set test scope
         id: scope
         run: |
@@ -70,7 +70,7 @@ jobs:
             echo "label=Full Suite" >> $GITHUB_OUTPUT
           fi
 
-      # ── 7. Create required output folders ────────────────────────
+      # ── 7. Create output folders ──────────────────────────────────
       - name: Create output directories
         run: mkdir -p allure-results reports/screenshots reports/html-report
 
@@ -92,7 +92,20 @@ jobs:
         if: always()
         run: allure generate allure-results --clean -o allure-report
 
-      # ── 10. Upload Allure report as downloadable artifact ─────────
+      # ── 10. Verify Allure report structure ────────────────────────
+      - name: Verify Allure report contents
+        if: always()
+        run: |
+          echo "── Allure report structure ──"
+          ls -la allure-report/
+          echo "── data folder ──"
+          ls -la allure-report/data/ 2>/dev/null || echo "data/ folder missing!"
+          echo "── test cases ──"
+          ls allure-report/data/test-cases/ 2>/dev/null | wc -l || echo "no test cases"
+          echo "── allure-results raw ──"
+          ls allure-results/ | wc -l
+
+      # ── 11. Upload Allure report (full folder) ────────────────────
       - name: Upload Allure report artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -100,8 +113,9 @@ jobs:
           name: allure-report-run-${{ github.run_number }}
           path: allure-report/
           retention-days: 30
+          if-no-files-found: warn
 
-      # ── 11. Upload Playwright HTML report ─────────────────────────
+      # ── 12. Upload Playwright HTML report ─────────────────────────
       - name: Upload Playwright HTML report artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -109,16 +123,42 @@ jobs:
           name: playwright-report-run-${{ github.run_number }}
           path: reports/html-report/
           retention-days: 30
+          if-no-files-found: warn
 
-      # ── 12. Job summary ───────────────────────────────────────────
+      # ── 13. Upload raw allure-results ─────────────────────────────
+      - name: Upload raw allure-results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-run-${{ github.run_number }}
+          path: allure-results/
+          retention-days: 30
+          if-no-files-found: warn
+
+      # ── 14. Job summary ───────────────────────────────────────────
       - name: Write job summary
         if: always()
         run: |
+          TOTAL=$(ls allure-results/*.json 2>/dev/null | wc -l || echo "0")
+          PASSED=$(grep -l '"status":"passed"' allure-results/*.json 2>/dev/null | wc -l || echo "0")
+          FAILED=$(grep -l '"status":"failed"' allure-results/*.json 2>/dev/null | wc -l || echo "0")
+
           echo "## 🧪 QA Test Run — #${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo "| | |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
           echo "| **Branch** | \`main\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Triggered by** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Tests run** | ${{ steps.scope.outputs.label }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Allure report** | Download from Artifacts tab ↑ |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Total results** | $TOTAL |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Passed** | ✅ $PASSED |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Failed** | ❌ $FAILED |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Allure report** | Download \`allure-report-run-${{ github.run_number }}\` from Artifacts ↑ |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📥 How to open Allure report" >> $GITHUB_STEP_SUMMARY
+          echo "1. Download \`allure-report-run-${{ github.run_number }}\` artifact" >> $GITHUB_STEP_SUMMARY
+          echo "2. Extract the zip" >> $GITHUB_STEP_SUMMARY
+          echo "3. Open a terminal in the extracted folder" >> $GITHUB_STEP_SUMMARY
+          echo "4. Run: \`npx allure open .\` OR serve with any HTTP server" >> $GITHUB_STEP_SUMMARY
+          echo "5. ⚠️ Do NOT open index.html directly — Allure needs an HTTP server" >> $GITHUB_STEP_SUMMARY
