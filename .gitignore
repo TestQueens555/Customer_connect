@@ -1,22 +1,30 @@
 node_modules/
 
-# Reports — ignore generated content, keep folder placeholders
+# ── Playwright / Automation report output (auto-generated, not committed) ──
 reports/screenshots/
 reports/html-report/
 reports/monocart/
 reports/test-results.json
 !reports/.gitkeep
-
-# Raw test output
 test-results/
+
+# ── Allure (auto-generated, not committed) ────────────────────────────────
 allure-results/*
 allure-report/
 !allure-results/.gitkeep
 
-# Media
+# ── Test Execution Reports (COMMITTED TO GIT) ─────────────────────────────
+# Feature Reports and Daily Reports Excel files ARE tracked — do NOT ignore
+!Test Execution Report/
+!Test Execution Report/**
+!Test Execution Report/Feature Reports/
+!Test Execution Report/Feature Reports/**
+!Test Execution Report/Daily Reports/
+!Test Execution Report/Daily Reports/**
+
+# ── Media / binary generated files ───────────────────────────────────────
 *.webm
 *.zip
-*.png
 
-# Env
+# ── Env ───────────────────────────────────────────────────────────────────
 .env
