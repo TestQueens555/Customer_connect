@@ -6,28 +6,60 @@ module.exports = defineConfig({
   retries:       1,
   fullyParallel: false,
   workers:       1,
+
   reporter: [
     ['list'],
-    ['allure-playwright', {
-      outputFolder:  'allure-results',
-      suiteTitle:     true,
-      detail:         true,
-      links: {
-        issue: { urlTemplate: 'https://github.com/TestQueens555/Customer_connect/issues/%s' },
+
+    // ── Monocart — single self-contained HTML, opens without a server ──
+    ['monocart-reporter', {
+      name:       'CustomerConnect QA — Login Module',
+      outputFile: 'reports/monocart/index.html',
+
+      // columns shown in the report table
+      columns: (defaultColumns) => {
+        const idCol = {
+          id:    'tc_id',
+          name:  'TC ID',
+          align: 'center',
+          width: 130,
+          searchable: true,
+          formatter: (v) => v || ''
+        };
+        defaultColumns.splice(1, 0, idCol);
+        return defaultColumns;
       },
+
+      // summary trend chart
+      trend: './reports/monocart/trend.json',
+
+      // on-fail extras
+      onEnd: async (reportData, capability) => {
+        console.log('Monocart report:', reportData.outputFile);
+        console.log(`Total: ${reportData.summary.tests} | Pass: ${reportData.summary.passed} | Fail: ${reportData.summary.failed}`);
+      }
     }],
-    ['html', { outputFolder: 'reports/html-report', open: 'never' }],
-    ['json', { outputFile:  'reports/test-results.json' }],
+
+    // ── Built-in Playwright HTML (also single file) ────────────────────
+    ['html', {
+      outputFolder: 'reports/html-report',
+      open:         'never'
+    }],
+
+    // ── JSON for scripting / CI ────────────────────────────────────────
+    ['json', { outputFile: 'reports/test-results.json' }],
   ],
+
   use: {
-    baseURL:    'http://customerportal.dev-ts.online',
-    headless:    true,
-    screenshot: 'only-on-failure',
-    video:      'retain-on-failure',
-    trace:      'on-first-retry',
+    baseURL:     'http://customerportal.dev-ts.online',
+    headless:     true,
+    screenshot:  'only-on-failure',
+    video:       'retain-on-failure',
+    trace:       'on-first-retry',
   },
+
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
   ],
+
   outputDir: 'reports/screenshots',
 });

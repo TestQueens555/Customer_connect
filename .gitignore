@@ -1,16 +1,17 @@
 node_modules/
 
-# Allure — ignore generated content but keep folder placeholder
-allure-results/*
-!allure-results/.gitkeep
-allure-report/
-
-# Playwright — ignore generated content but keep folder placeholder
+# Reports — ignore generated content, keep folder placeholders
 reports/screenshots/
 reports/html-report/
+reports/monocart/
 reports/test-results.json
 !reports/.gitkeep
+
+# Raw test output
 test-results/
+allure-results/*
+allure-report/
+!allure-results/.gitkeep
 
 # Media
 *.webm

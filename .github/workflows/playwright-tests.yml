@@ -1,4 +1,4 @@
-name: Playwright E2E Tests + Allure Report
+name: Playwright E2E Tests + Monocart Report
 
 on:
   push:
@@ -36,11 +36,7 @@ jobs:
       - name: Install Playwright + Chromium
         run: npx playwright install --with-deps chromium
 
-      # ── 5. Allure CLI ─────────────────────────────────────────────
-      - name: Install Allure CLI
-        run: npm install -g allure-commandline
-
-      # ── 6. Detect which tests to run ──────────────────────────────
+      # ── 5. Detect which tests to run ──────────────────────────────
       - name: Detect changed files and set test scope
         id: scope
         run: |
@@ -59,64 +55,47 @@ jobs:
           elif echo "$CHANGED" | grep -q "tests/profile\|pages/ProfilePage\|test-data/profileData"; then
             echo "test_path=tests/profile.spec.js" >> $GITHUB_OUTPUT
             echo "label=Profile Module" >> $GITHUB_OUTPUT
-          elif echo "$CHANGED" | grep -q "tests/checkout\|pages/CheckoutPage\|test-data/checkoutData"; then
-            echo "test_path=tests/checkout.spec.js" >> $GITHUB_OUTPUT
-            echo "label=Checkout Module" >> $GITHUB_OUTPUT
-          elif echo "$CHANGED" | grep -q "tests/orders\|pages/OrdersPage\|test-data/ordersData"; then
-            echo "test_path=tests/orders.spec.js" >> $GITHUB_OUTPUT
-            echo "label=Orders Module" >> $GITHUB_OUTPUT
           else
             echo "test_path=all" >> $GITHUB_OUTPUT
             echo "label=Full Suite" >> $GITHUB_OUTPUT
           fi
 
-      # ── 7. Create output folders ──────────────────────────────────
+      # ── 6. Create output folders ──────────────────────────────────
       - name: Create output directories
-        run: mkdir -p allure-results reports/screenshots reports/html-report
+        run: mkdir -p reports/monocart reports/html-report reports/screenshots
 
-      # ── 8. Run Playwright tests ───────────────────────────────────
+      # ── 7. Run Playwright tests ───────────────────────────────────
       - name: "Run tests — ${{ steps.scope.outputs.label }}"
         id: playwright
         run: |
           if [ "${{ steps.scope.outputs.test_path }}" = "all" ]; then
-            echo "▶ Running full test suite"
             npx playwright test
           else
-            echo "▶ Running: ${{ steps.scope.outputs.test_path }}"
             npx playwright test ${{ steps.scope.outputs.test_path }}
           fi
         continue-on-error: true
 
-      # ── 9. Generate Allure report ─────────────────────────────────
-      - name: Generate Allure report
-        if: always()
-        run: allure generate allure-results --clean -o allure-report
-
-      # ── 10. Verify Allure report structure ────────────────────────
-      - name: Verify Allure report contents
+      # ── 8. Verify report generated ────────────────────────────────
+      - name: Verify Monocart report
         if: always()
         run: |
-          echo "── Allure report structure ──"
-          ls -la allure-report/
-          echo "── data folder ──"
-          ls -la allure-report/data/ 2>/dev/null || echo "data/ folder missing!"
-          echo "── test cases ──"
-          ls allure-report/data/test-cases/ 2>/dev/null | wc -l || echo "no test cases"
-          echo "── allure-results raw ──"
-          ls allure-results/ | wc -l
+          echo "── Monocart report ──"
+          ls -lh reports/monocart/ 2>/dev/null || echo "monocart folder missing"
+          echo "── Playwright HTML ──"
+          ls -lh reports/html-report/ 2>/dev/null || echo "html-report folder missing"
 
-      # ── 11. Upload Allure report (full folder) ────────────────────
-      - name: Upload Allure report artifact
+      # ── 9. Upload Monocart HTML report ────────────────────────────
+      - name: Upload Monocart report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-report-run-${{ github.run_number }}
-          path: allure-report/
+          name: monocart-report-run-${{ github.run_number }}
+          path: reports/monocart/
           retention-days: 30
           if-no-files-found: warn
 
-      # ── 12. Upload Playwright HTML report ─────────────────────────
-      - name: Upload Playwright HTML report artifact
+      # ── 10. Upload Playwright HTML report ─────────────────────────
+      - name: Upload Playwright HTML report
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -125,40 +104,44 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
-      # ── 13. Upload raw allure-results ─────────────────────────────
-      - name: Upload raw allure-results
+      # ── 11. Upload test results JSON ──────────────────────────────
+      - name: Upload test results JSON
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-results-run-${{ github.run_number }}
-          path: allure-results/
+          name: test-results-json-run-${{ github.run_number }}
+          path: reports/test-results.json
           retention-days: 30
           if-no-files-found: warn
 
-      # ── 14. Job summary ───────────────────────────────────────────
+      # ── 12. Job summary ───────────────────────────────────────────
       - name: Write job summary
         if: always()
         run: |
-          TOTAL=$(ls allure-results/*.json 2>/dev/null | wc -l || echo "0")
-          PASSED=$(grep -l '"status":"passed"' allure-results/*.json 2>/dev/null | wc -l || echo "0")
-          FAILED=$(grep -l '"status":"failed"' allure-results/*.json 2>/dev/null | wc -l || echo "0")
+          # Parse results from JSON
+          if [ -f reports/test-results.json ]; then
+            TOTAL=$(node -e "const r=require('./reports/test-results.json'); const t=r.suites?.flatMap?.(s=>s.specs?.flatMap?.(sp=>sp.tests)||[])||[]; console.log(t.length)" 2>/dev/null || echo "?")
+            PASSED=$(node -e "const r=require('./reports/test-results.json'); const t=r.suites?.flatMap?.(s=>s.specs?.flatMap?.(sp=>sp.tests)||[])||[]; console.log(t.filter(x=>x.results?.[0]?.status==='passed').length)" 2>/dev/null || echo "?")
+            FAILED=$(node -e "const r=require('./reports/test-results.json'); const t=r.suites?.flatMap?.(s=>s.specs?.flatMap?.(sp=>sp.tests)||[])||[]; console.log(t.filter(x=>x.results?.[0]?.status==='failed').length)" 2>/dev/null || echo "?")
+          else
+            TOTAL="?"; PASSED="?"; FAILED="?"
+          fi
 
-          echo "## 🧪 QA Test Run — #${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "## 🧪 QA — ${{ steps.scope.outputs.label }} | Run #${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| | |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
           echo "| **Branch** | \`main\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Triggered by** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Tests run** | ${{ steps.scope.outputs.label }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Total results** | $TOTAL |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Passed** | ✅ $PASSED |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Failed** | ❌ $FAILED |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Allure report** | Download \`allure-report-run-${{ github.run_number }}\` from Artifacts ↑ |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Tests scope** | ${{ steps.scope.outputs.label }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Total** | $TOTAL |" >> $GITHUB_STEP_SUMMARY
+          echo "| **✅ Passed** | $PASSED |" >> $GITHUB_STEP_SUMMARY
+          echo "| **❌ Failed** | $FAILED |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📥 How to open Allure report" >> $GITHUB_STEP_SUMMARY
-          echo "1. Download \`allure-report-run-${{ github.run_number }}\` artifact" >> $GITHUB_STEP_SUMMARY
-          echo "2. Extract the zip" >> $GITHUB_STEP_SUMMARY
-          echo "3. Open a terminal in the extracted folder" >> $GITHUB_STEP_SUMMARY
-          echo "4. Run: \`npx allure open .\` OR serve with any HTTP server" >> $GITHUB_STEP_SUMMARY
-          echo "5. ⚠️ Do NOT open index.html directly — Allure needs an HTTP server" >> $GITHUB_STEP_SUMMARY
+          echo "### 📥 Reports (download from Artifacts ↑)" >> $GITHUB_STEP_SUMMARY
+          echo "| Report | How to open |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| \`monocart-report-run-${{ github.run_number }}\` | ✅ Download zip → extract → **double-click index.html** |" >> $GITHUB_STEP_SUMMARY
+          echo "| \`playwright-report-run-${{ github.run_number }}\` | Download zip → extract → double-click index.html |" >> $GITHUB_STEP_SUMMARY
+          echo "| \`test-results-json-run-${{ github.run_number }}\` | Raw JSON for scripting |" >> $GITHUB_STEP_SUMMARY
