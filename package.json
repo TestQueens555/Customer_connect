@@ -1,0 +1,54 @@
+{
+  "name": "customer_connect",
+  "version": "1.0.0",
+  "description": "E2E Automation Suite — Customer Portal QA",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TestQueens555/Customer_connect.git"
+  },
+  "scripts": {
+
+    "// ── RUN ALL ──────────────────────────────────────────────────────": "",
+    "test":              "npx playwright test",
+    "test:headed":       "npx playwright test --headed",
+    "test:debug":        "npx playwright test --debug",
+
+    "// ── RUN BY PAGE / FEATURE ───────────────────────────────────────": "",
+    "test:login":        "npx playwright test tests/login.spec.js",
+    "test:dashboard":    "npx playwright test tests/dashboard.spec.js",
+    "test:register":     "npx playwright test tests/register.spec.js",
+    "test:profile":      "npx playwright test tests/profile.spec.js",
+    "test:checkout":     "npx playwright test tests/checkout.spec.js",
+    "test:orders":       "npx playwright test tests/orders.spec.js",
+
+    "// ── RUN WITH HEADED (VISIBLE BROWSER) ──────────────────────────": "",
+    "test:login:headed":     "npx playwright test tests/login.spec.js --headed",
+    "test:dashboard:headed": "npx playwright test tests/dashboard.spec.js --headed",
+
+    "// ── RUN BY SUITE TAG ────────────────────────────────────────────": "",
+    "test:smoke":        "npx playwright test --grep @smoke",
+    "test:regression":   "npx playwright test --grep @regression",
+    "test:critical":     "npx playwright test --grep @critical",
+    "test:security":     "npx playwright test --grep @security",
+    "test:negative":     "npx playwright test --grep @negative",
+
+    "// ── ALLURE REPORT ───────────────────────────────────────────────": "",
+    "allure:generate":   "allure generate allure-results --clean -o allure-report",
+    "allure:open":       "allure open allure-report",
+
+    "// ── PLAYWRIGHT REPORT ──────────────────────────────────────────": "",
+    "report:html":       "npx playwright show-report reports/html-report",
+
+    "// ── FULL PIPELINE: test + allure + git push ─────────────────────": "",
+    "run:login":         "npx playwright test tests/login.spec.js && allure generate allure-results --clean -o allure-report",
+    "run:all":           "npx playwright test && allure generate allure-results --clean -o allure-report",
+    "push:github":       "powershell -ExecutionPolicy Bypass -File push-after-report.ps1",
+    "run:and:push":      "npm run run:all && npm run push:github"
+
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "allure-commandline": "^2.34.0",
+    "allure-playwright": "^3.3.1"
+  }
+}

@@ -1,0 +1,8 @@
+node_modules/
+allure-results/
+test-results/
+reports/screenshots/
+reports/html-report/
+*.webm
+*.zip
+.env
