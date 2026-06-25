@@ -14,7 +14,7 @@ into:  D:\Claude\QA_Projects\CustomerConnect\Featurewise Test Report\
 |-------------|---------------------------------------------------------------------|
 | Project      | CustomerConnect QA Automation                                       |
 | Project Root | D:\Claude\QA_Projects\CustomerConnect                               |
-| Report Folder| D:\Claude\QA_Projects\CustomerConnect\Featurewise Test Report\      |
+| Report Folder| D:\Claude\QA_Projects\CustomerConnect\Test Execution Report\        |
 | App URL      | http://customerportal.dev-ts.online/Account/Login?ReturnUrl=%2F    |
 | Username     | sajith_xyz                                                          |
 | Password     | User@123                                                            |
