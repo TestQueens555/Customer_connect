@@ -8,16 +8,16 @@
   },
   "scripts": {
 
-    "// ── RUN BY PAGE ──────────────────────────────────────────────────": "",
+    "// ── RUN BY FEATURE ───────────────────────────────────────────────": "",
     "test:login":          "npx playwright test tests/login.spec.js",
     "test:dashboard":      "npx playwright test tests/dashboard.spec.js",
-    "test:register":       "npx playwright test tests/register.spec.js",
-    "test:profile":        "npx playwright test tests/profile.spec.js",
-    "test:checkout":       "npx playwright test tests/checkout.spec.js",
-    "test:orders":         "npx playwright test tests/orders.spec.js",
+    "test:createticket":   "npx playwright test tests/createTicket.spec.js",
+    "test:all":            "npx playwright test",
 
     "// ── RUN HEADED ───────────────────────────────────────────────────": "",
-    "test:login:headed":   "npx playwright test tests/login.spec.js --headed",
+    "test:login:headed":         "npx playwright test tests/login.spec.js --headed",
+    "test:dashboard:headed":     "npx playwright test tests/dashboard.spec.js --headed",
+    "test:createticket:headed":  "npx playwright test tests/createTicket.spec.js --headed",
 
     "// ── RUN BY TAG ───────────────────────────────────────────────────": "",
     "test:smoke":          "npx playwright test --grep @smoke",
@@ -26,21 +26,31 @@
     "test:critical":       "npx playwright test --grep @critical",
     "test:negative":       "npx playwright test --grep @negative",
 
-    "// ── GENERATE EXCEL REPORTS ──────────────────────────────────────": "",
+    "// ── GENERATE FEATURE EXCEL REPORTS ─────────────────────────────": "",
     "report:login":        "node utils/generate-report.js --feature=Login",
-    "report:daily":        "node utils/generate-daily-report.js --feature=Login",
-    "report:login:full":   "npm run test:login && npm run report:login && npm run report:daily",
+    "report:dashboard":    "node utils/generate-report.js --feature=Dashboard",
+    "report:createticket": "node utils/generate-report.js --feature=CreateTicket",
 
-    "// ── OPEN REPORTS ────────────────────────────────────────────────": "",
-    "report:open":         "npx playwright show-report reports/html-report",
-    "report:monocart":     "start \"Test Execution Report\"",
+    "// ── GENERATE DAILY BUG REPORTS ──────────────────────────────────": "",
+    "bug-report:daily":    "node utils/generate-daily-bug-report.js",
+    "report:daily":        "node utils/generate-daily-report.js --feature=All",
 
-    "// ── FULL PIPELINE ────────────────────────────────────────────────": "",
+    "// ── FULL PIPELINE PER FEATURE ───────────────────────────────────": "",
     "run:login":           "npm run test:login && npm run report:login && npm run report:daily",
-    "run:all":             "npx playwright test",
-    "push:github":         "powershell -ExecutionPolicy Bypass -File push-after-report.ps1 -Feature Login",
-    "run:and:push":        "npm run run:login && npm run push:github"
+    "run:dashboard":       "npm run test:dashboard && npm run report:dashboard && npm run report:daily",
+    "run:createticket":    "npm run test:createticket && npm run report:createticket && npm run report:daily",
+    "run:all":             "npm run test:all && npm run report:daily",
 
+    "// ── REGRESSION ───────────────────────────────────────────────────": "",
+    "regression:login":        "npm run test:login && node utils/generate-report.js --feature=Login --regression",
+    "regression:dashboard":    "npm run test:dashboard && node utils/generate-report.js --feature=Dashboard --regression",
+    "regression:createticket": "npm run test:createticket && node utils/generate-report.js --feature=CreateTicket --regression",
+    "regression:all":          "npm run test:all && npm run bug-report:daily",
+
+    "// ── UTILITIES ────────────────────────────────────────────────────": "",
+    "save-reference":      "node utils/save-reference.js",
+    "init-reports":        "node utils/init-reports.js",
+    "report:open":         "npx playwright show-report reports/html-report"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",

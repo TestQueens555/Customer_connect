@@ -12,7 +12,7 @@ module.exports = defineConfig({
 
     // ── Monocart — single self-contained HTML, opens without a server ──
     ['monocart-reporter', {
-      name:       'CustomerConnect QA — Login Module',
+      name:       'CustomerConnect QA — Test Report',
       outputFile: 'reports/monocart/index.html',
 
       // columns shown in the report table

@@ -83,8 +83,7 @@ jobs:
 
       # ── Save reference document ────────────────────────────────────────────────
       - name: Save scripts reference document
-        run: node utils/save-reference.js
-        continue-on-error: true
+        run: node utils/save-reference.js || true
 
       # ── Upload Playwright HTML report ──────────────────────────────────────────
       - name: Upload Playwright HTML report

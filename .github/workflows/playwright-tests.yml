@@ -53,18 +53,14 @@ jobs:
             echo "test_path=tests/login.spec.js" >> $GITHUB_OUTPUT
             echo "feature=Login"                 >> $GITHUB_OUTPUT
             echo "label=Login Module"            >> $GITHUB_OUTPUT
-          elif echo "$CHANGED" | grep -q "tests/dashboard\|pages/DashboardPage"; then
+          elif echo "$CHANGED" | grep -q "tests/dashboard\|pages/DashboardPage\|test-data/dashboardData"; then
             echo "test_path=tests/dashboard.spec.js" >> $GITHUB_OUTPUT
             echo "feature=Dashboard"                 >> $GITHUB_OUTPUT
             echo "label=Dashboard Module"            >> $GITHUB_OUTPUT
-          elif echo "$CHANGED" | grep -q "tests/register\|pages/RegisterPage"; then
-            echo "test_path=tests/register.spec.js" >> $GITHUB_OUTPUT
-            echo "feature=Register"                 >> $GITHUB_OUTPUT
-            echo "label=Register Module"            >> $GITHUB_OUTPUT
-          elif echo "$CHANGED" | grep -q "tests/profile\|pages/ProfilePage"; then
-            echo "test_path=tests/profile.spec.js" >> $GITHUB_OUTPUT
-            echo "feature=Profile"                 >> $GITHUB_OUTPUT
-            echo "label=Profile Module"            >> $GITHUB_OUTPUT
+          elif echo "$CHANGED" | grep -q "tests/createTicket\|pages/CreateTicketPage\|test-data/createTicketData"; then
+            echo "test_path=tests/createTicket.spec.js" >> $GITHUB_OUTPUT
+            echo "feature=CreateTicket"                 >> $GITHUB_OUTPUT
+            echo "label=Create Ticket Module"           >> $GITHUB_OUTPUT
           else
             echo "test_path=all"     >> $GITHUB_OUTPUT
             echo "feature=All"       >> $GITHUB_OUTPUT

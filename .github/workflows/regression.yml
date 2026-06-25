@@ -119,13 +119,11 @@ jobs:
 
       # ── Generate daily bug report ──────────────────────────────────────────────
       - name: Generate daily bug report
-        run: node utils/generate-daily-bug-report.js
-        continue-on-error: true
+        run: node utils/generate-daily-bug-report.js || true
 
       # ── Save reference document ────────────────────────────────────────────────
       - name: Save scripts reference document
-        run: node utils/save-reference.js
-        continue-on-error: true
+        run: node utils/save-reference.js || true
 
       # ── Upload Playwright HTML report ──────────────────────────────────────────
       - name: Upload Playwright HTML report
