@@ -3,22 +3,26 @@ const BasePage = require('./BasePage');
 class LoginPage extends BasePage {
   constructor(page) {
     super(page);
-    // ── Locators — from live UI inspection ──────────────────────────
-    this.usernameInput  = page.locator('#UserName');
-    this.passwordInput  = page.locator('#Password');
-    this.rememberMe     = page.locator('#RememberMe');
-    this.signInButton   = page.locator('button[type="submit"]');
-    this.errorAlert     = page.locator('.kt-alert-destructive').first();
-    this.pageTitle      = page.locator('h1, h2, h3').first();
+    // ── Locators — confirmed live on http://customerportal.dev-ts.online ──
+    this.usernameInput = page.locator('#UserName');
+    this.passwordInput = page.locator('#Password');
+    this.rememberMe    = page.locator('#RememberMe');
+    this.signInButton  = page.locator('button[type="submit"]');
+    this.pwdToggle     = page.locator('button[type="button"]').first();
+    // Error: span.text-sm.font-medium → "Invalid user name or password"
+    this.errorMessage  = page.locator('span.text-sm.font-medium');
   }
 
-  async enterUsername(username) { await this.usernameInput.fill(username); }
-  async enterPassword(password) { await this.passwordInput.fill(password); }
-  async checkRememberMe()       { await this.rememberMe.check(); }
+  async navigate(url)            { await this.page.goto(url); await this.page.waitForLoadState('networkidle'); }
+  async enterUsername(username)  { await this.usernameInput.fill(username); }
+  async enterPassword(password)  { await this.passwordInput.fill(password); }
+  async checkRememberMe()        { await this.rememberMe.check(); }
+  async togglePasswordVisibility(){ await this.pwdToggle.click(); await this.page.waitForTimeout(300); }
 
   async clickSignIn() {
-    await this.signInButton.click();
-    await this.page.waitForLoadState('networkidle');
+    // Use JS click to avoid navigation timeout on slow responses (e.g. SQL payloads)
+    await this.page.evaluate(() => document.querySelector('button[type="submit"]').click());
+    await this.page.waitForTimeout(4000);
   }
 
   async login(username, password) {
@@ -28,10 +32,11 @@ class LoginPage extends BasePage {
   }
 
   async getErrorMessage() {
-    try { return (await this.errorAlert.textContent()).trim(); } catch { return ''; }
+    try { return (await this.errorMessage.textContent({ timeout: 3000 })).trim(); }
+    catch { return ''; }
   }
 
-  async isErrorVisible()         { return await this.errorAlert.isVisible().catch(() => false); }
+  async isErrorVisible()         { return await this.errorMessage.isVisible().catch(() => false); }
   async isUsernameFieldVisible() { return await this.usernameInput.isVisible().catch(() => false); }
   async isPasswordFieldVisible() { return await this.passwordInput.isVisible().catch(() => false); }
   async isSignInButtonVisible()  { return await this.signInButton.isVisible().catch(() => false); }

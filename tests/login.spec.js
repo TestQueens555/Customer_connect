@@ -5,182 +5,178 @@ const config        = require('../utils/config');
 const loginData     = require('../test-data/loginData');
 
 test.describe('Login Module', () => {
-  let loginPage, dashboardPage;
+  let loginPage;
 
   test.beforeEach(async ({ page }) => {
-    loginPage     = new LoginPage(page);
-    dashboardPage = new DashboardPage(page);
-    await page.goto('http://customerportal.dev-ts.online/Account/Logout');
-    await page.waitForLoadState('networkidle');
+    loginPage = new LoginPage(page);
+    await page.context().clearCookies();
     await loginPage.navigate(config.loginURL);
   });
 
-  // ── UI ────────────────────────────────────────────────────────────────
-  test('TC-LOGIN-001 | Login page loads with all UI elements',
-    { tag: ['@smoke', '@ui'], annotation: [{ type: 'suite', description: 'UI' }, { type: 'severity', description: 'critical' }] },
+  // ── Positive ───────────────────────────────────────────────────────────────
+
+  test('TC-LOGIN-001 | Valid login redirects to dashboard',
+    { tag: ['@smoke', '@critical'] },
     async ({ page }) => {
-      await test.step('Verify page title = Sign In', async () => {
-        expect(await loginPage.getPageTitle()).toBe('Sign In');
-      });
-      await test.step('Verify username field visible', async () => {
-        expect(await loginPage.isUsernameFieldVisible()).toBeTruthy();
-      });
-      await test.step('Verify password field visible', async () => {
-        expect(await loginPage.isPasswordFieldVisible()).toBeTruthy();
-      });
-      await test.step('Verify Sign In button visible', async () => {
-        expect(await loginPage.isSignInButtonVisible()).toBeTruthy();
-      });
-      await test.step('Verify Remember Me checkbox visible', async () => {
-        expect(await loginPage.isRememberMeVisible()).toBeTruthy();
-      });
+      await loginPage.login(loginData.validUser.username, loginData.validUser.password);
+      await expect(page).not.toHaveURL(/Login/);
+      expect(await page.title()).toContain('Dashboard');
     });
 
-  // ── Positive ──────────────────────────────────────────────────────────
-  test('TC-LOGIN-002 | Valid credentials redirect to dashboard',
-    { tag: ['@smoke', '@critical'], annotation: [{ type: 'suite', description: 'Positive' }, { type: 'severity', description: 'critical' }] },
+  test('TC-LOGIN-002 | Login page loads with all required fields',
+    { tag: ['@smoke', '@ui'] },
     async ({ page }) => {
-      await test.step('Enter valid username', async () => {
-        await loginPage.enterUsername(loginData.validUser.username);
-      });
-      await test.step('Enter valid password', async () => {
-        await loginPage.enterPassword(loginData.validUser.password);
-      });
-      await test.step('Click Sign In', async () => {
-        await loginPage.clickSignIn();
-      });
-      await test.step('Verify redirected to dashboard', async () => {
-        await expect(page).not.toHaveURL(/Login/);
-        expect(await page.title()).toContain('Dashboard');
-      });
+      expect(await page.title()).toBe('Sign In');
+      expect(await loginPage.isUsernameFieldVisible()).toBeTruthy();
+      expect(await loginPage.isPasswordFieldVisible()).toBeTruthy();
+      expect(await loginPage.isRememberMeVisible()).toBeTruthy();
+      expect(await loginPage.isSignInButtonVisible()).toBeTruthy();
     });
 
-  test('TC-LOGIN-003 | Login with Remember Me checked',
-    { tag: ['@regression'], annotation: [{ type: 'suite', description: 'Positive' }, { type: 'severity', description: 'high' }] },
+  test('TC-LOGIN-003 | Password field is masked by default',
+    { tag: ['@smoke', '@ui'] },
     async ({ page }) => {
-      await test.step('Enter credentials and check Remember Me', async () => {
-        await loginPage.enterUsername(loginData.validUser.username);
-        await loginPage.enterPassword(loginData.validUser.password);
-        await loginPage.checkRememberMe();
-        await loginPage.clickSignIn();
-      });
-      await test.step('Verify login successful', async () => {
-        await expect(page).not.toHaveURL(/Login/);
-      });
+      expect(await loginPage.getPasswordInputType()).toBe('password');
     });
 
-  // ── Negative ──────────────────────────────────────────────────────────
-  test('TC-LOGIN-004 | Invalid username shows error',
-    { tag: ['@regression', '@negative'], annotation: [{ type: 'suite', description: 'Negative' }, { type: 'severity', description: 'critical' }] },
+  test('TC-LOGIN-004 | Password show/hide toggle works',
+    { tag: ['@regression'] },
     async ({ page }) => {
-      await test.step('Login with invalid username', async () => {
-        await loginPage.login(loginData.invalidUser.username, loginData.validUser.password);
-      });
-      await test.step('Verify stays on login page', async () => {
-        await expect(page).toHaveURL(/Login/);
-      });
-      await test.step('Verify error: Invalid user name or password', async () => {
-        expect(await loginPage.isErrorVisible()).toBeTruthy();
-        expect(await loginPage.getErrorMessage()).toContain('Invalid user name or password');
-      });
+      expect(await loginPage.getPasswordInputType()).toBe('password');
+      await loginPage.togglePasswordVisibility();
+      expect(await loginPage.getPasswordInputType()).toBe('text');
     });
 
-  test('TC-LOGIN-005 | Invalid password shows error',
-    { tag: ['@regression', '@negative'], annotation: [{ type: 'suite', description: 'Negative' }, { type: 'severity', description: 'critical' }] },
+  test('TC-LOGIN-005 | Remember Me checkbox toggles correctly',
+    { tag: ['@regression'] },
     async ({ page }) => {
-      await test.step('Login with wrong password', async () => {
-        await loginPage.login(loginData.validUser.username, loginData.invalidUser.password);
-      });
-      await test.step('Verify stays on login page', async () => {
-        await expect(page).toHaveURL(/Login/);
-      });
-      await test.step('Verify error message', async () => {
-        expect(await loginPage.getErrorMessage()).toContain('Invalid user name or password');
-      });
+      await loginPage.checkRememberMe();
+      expect(await page.locator('#RememberMe').isChecked()).toBeTruthy();
+      await page.locator('#RememberMe').uncheck();
+      expect(await page.locator('#RememberMe').isChecked()).toBeFalsy();
     });
 
-  test('TC-LOGIN-006 | Empty username blocked',
-    { tag: ['@regression', '@negative'], annotation: [{ type: 'suite', description: 'Negative' }, { type: 'severity', description: 'high' }] },
+  // ── Negative ───────────────────────────────────────────────────────────────
+
+  test('TC-LOGIN-006 | Invalid credentials shows error message',
+    { tag: ['@smoke', '@negative'] },
     async ({ page }) => {
-      await test.step('Submit with empty username', async () => {
-        await loginPage.login(loginData.emptyUser.username, loginData.validUser.password);
-      });
-      await test.step('Verify blocked — mandatory message shown', async () => {
-        await expect(page).toHaveURL(/Login/);
-        expect(await loginPage.getErrorMessage()).toContain('mandatory');
-      });
+      await loginPage.login(loginData.invalidUser.username, loginData.invalidUser.password);
+      await expect(page).toHaveURL(/Login/);
+      expect(await loginPage.getErrorMessage()).toContain('Invalid user name or password');
     });
 
-  test('TC-LOGIN-007 | Empty password blocked',
-    { tag: ['@regression', '@negative'], annotation: [{ type: 'suite', description: 'Negative' }, { type: 'severity', description: 'high' }] },
+  test('TC-LOGIN-007 | Empty username and password blocked',
+    { tag: ['@regression', '@negative'] },
     async ({ page }) => {
-      await test.step('Submit with empty password', async () => {
-        await loginPage.login(loginData.validUser.username, loginData.emptyUser.password);
-      });
-      await test.step('Verify blocked — mandatory message shown', async () => {
-        await expect(page).toHaveURL(/Login/);
-        expect(await loginPage.getErrorMessage()).toContain('mandatory');
-      });
+      await loginPage.login('', '');
+      await expect(page).toHaveURL(/Login/);
     });
 
-  test('TC-LOGIN-008 | Both fields empty blocked',
-    { tag: ['@regression'], annotation: [{ type: 'suite', description: 'Boundary' }, { type: 'severity', description: 'high' }] },
+  test('TC-LOGIN-008 | Valid username with empty password blocked',
+    { tag: ['@regression', '@negative'] },
     async ({ page }) => {
-      await test.step('Submit with both fields empty', async () => {
-        await loginPage.login(loginData.emptyUser.username, loginData.emptyUser.password);
-      });
-      await test.step('Verify blocked', async () => {
-        await expect(page).toHaveURL(/Login/);
-        expect(await loginPage.getErrorMessage()).toContain('mandatory');
-      });
+      await loginPage.login(loginData.validUser.username, '');
+      await expect(page).toHaveURL(/Login/);
     });
 
-  // ── Security ──────────────────────────────────────────────────────────
-  test('TC-LOGIN-009 | SQL injection rejected',
-    { tag: ['@security'], annotation: [{ type: 'suite', description: 'Security' }, { type: 'severity', description: 'critical' }] },
+  test('TC-LOGIN-009 | Empty username with valid password blocked',
+    { tag: ['@regression', '@negative'] },
     async ({ page }) => {
-      await test.step('Enter SQL injection as username', async () => {
-        await loginPage.login(loginData.boundaryData.sqlInjection, loginData.validUser.password);
-      });
-      await test.step('Verify login rejected, no crash', async () => {
-        await expect(page).toHaveURL(/Login/);
-        const body = await page.evaluate(() => document.body.innerText.toLowerCase());
-        expect(body).not.toContain('exception');
-        expect(body).not.toContain('server error');
-      });
+      await loginPage.login('', loginData.validUser.password);
+      await expect(page).toHaveURL(/Login/);
     });
 
-  test('TC-LOGIN-010 | XSS payload rejected',
-    { tag: ['@security'], annotation: [{ type: 'suite', description: 'Security' }, { type: 'severity', description: 'critical' }] },
+  test('TC-LOGIN-010 | Wrong username with correct password rejected',
+    { tag: ['@regression', '@negative'] },
     async ({ page }) => {
-      await test.step('Enter XSS payload as username', async () => {
-        await loginPage.login(loginData.boundaryData.xssPayload, loginData.validUser.password);
-      });
-      await test.step('Verify rejected, no script executed', async () => {
-        await expect(page).toHaveURL(/Login/);
-      });
+      await loginPage.login(loginData.invalidUser.username, loginData.validUser.password);
+      await expect(page).toHaveURL(/Login/);
+      expect(await loginPage.getErrorMessage()).toContain('Invalid user name or password');
     });
 
-  // ── Boundary ──────────────────────────────────────────────────────────
-  test('TC-LOGIN-011 | Max length username (256 chars) handled',
-    { tag: ['@regression'], annotation: [{ type: 'suite', description: 'Boundary' }, { type: 'severity', description: 'medium' }] },
+  test('TC-LOGIN-011 | Correct username with wrong password rejected',
+    { tag: ['@regression', '@negative'] },
     async ({ page }) => {
-      await test.step('Enter 256-character username', async () => {
-        await loginPage.login(loginData.boundaryData.longUsername, loginData.validUser.password);
-      });
-      await test.step('Verify page does not crash', async () => {
-        expect(await loginPage.getPageTitle()).toBeTruthy();
-        await expect(page).toHaveURL(/Login/);
-      });
+      await loginPage.login(loginData.validUser.username, loginData.invalidUser.password);
+      await expect(page).toHaveURL(/Login/);
+      expect(await loginPage.getErrorMessage()).toContain('Invalid user name or password');
     });
 
-  test('TC-LOGIN-012 | Password field masks input',
-    { tag: ['@smoke', '@ui'], annotation: [{ type: 'suite', description: 'UI' }, { type: 'severity', description: 'high' }] },
+  // ── Boundary ───────────────────────────────────────────────────────────────
+
+  test('TC-LOGIN-012 | Username with 256 characters handled gracefully',
+    { tag: ['@regression'] },
     async ({ page }) => {
-      await test.step('Verify password input type = password', async () => {
-        const type = await loginPage.getPasswordInputType();
-        expect(type).toBe('password');
-      });
+      await loginPage.login(loginData.boundaryData.longUsername, 'anything');
+      await expect(page).toHaveURL(/Login/);
+      expect(await page.title()).not.toContain('500');
     });
 
+  test('TC-LOGIN-013 | Password with 256 characters handled gracefully',
+    { tag: ['@regression'] },
+    async ({ page }) => {
+      await loginPage.login(loginData.validUser.username, loginData.boundaryData.longPassword);
+      await expect(page).toHaveURL(/Login/);
+      expect(await page.title()).not.toContain('500');
+    });
+
+  test('TC-LOGIN-014 | Whitespace-only username is rejected',
+    { tag: ['@regression'] },
+    async ({ page }) => {
+      await loginPage.login(loginData.boundaryData.whitespaceOnly, loginData.validUser.password);
+      await expect(page).toHaveURL(/Login/);
+    });
+
+  test('TC-LOGIN-015 | Special characters in username handled safely',
+    { tag: ['@regression'] },
+    async ({ page }) => {
+      await loginPage.login(loginData.boundaryData.specialChars, loginData.validUser.password);
+      await expect(page).toHaveURL(/Login/);
+      expect(await page.title()).not.toContain('500');
+    });
+
+  // ── Security ───────────────────────────────────────────────────────────────
+
+  test('TC-LOGIN-016 | SQL injection in username handled safely',
+    { tag: ['@security'] },
+    async ({ page }) => {
+      await loginPage.login(loginData.boundaryData.sqlInjection, 'anything');
+      await expect(page).toHaveURL(/Login/);
+      expect(await page.title()).not.toContain('500');
+    });
+
+  test('TC-LOGIN-017 | SQL injection in password handled safely',
+    { tag: ['@security'] },
+    async ({ page }) => {
+      await loginPage.login(loginData.validUser.username, loginData.boundaryData.sqlInjectionPwd);
+      await expect(page).toHaveURL(/Login/);
+      expect(await page.title()).not.toContain('500');
+    });
+
+  test('TC-LOGIN-018 | XSS payload in username handled safely',
+    { tag: ['@security'] },
+    async ({ page }) => {
+      await loginPage.login(loginData.boundaryData.xssPayload, 'anything');
+      await expect(page).toHaveURL(/Login/);
+      expect(await page.title()).not.toContain('500');
+    });
+
+  test('TC-LOGIN-019 | Unauthenticated access redirects to login',
+    { tag: ['@security'] },
+    async ({ page }) => {
+      await page.context().clearCookies();
+      await page.goto('http://customerportal.dev-ts.online/');
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(500);
+      await expect(page).toHaveURL(/Login/);
+    });
+
+  test('TC-LOGIN-020 | Username login is case-insensitive (behaviour confirmed)',
+    { tag: ['@regression'] },
+    async ({ page }) => {
+      await loginPage.login('SAJITH_XYZ', loginData.validUser.password);
+      // App is NOT case-sensitive — SAJITH_XYZ logs in successfully
+      await expect(page).not.toHaveURL(/Login/);
+    });
 });

@@ -1,0 +1,25 @@
+
+Running 20 tests using 1 worker
+
+  ok  1 [chromium] › tests\login.spec.js:18:3 › Login Module › TC-LOGIN-001 | Valid login redirects to dashboard @smoke @critical (14.8s)
+  ok  2 [chromium] › tests\login.spec.js:26:3 › Login Module › TC-LOGIN-002 | Login page loads with all required fields @smoke @ui (4.2s)
+  ok  3 [chromium] › tests\login.spec.js:36:3 › Login Module › TC-LOGIN-003 | Password field is masked by default @smoke @ui (3.7s)
+  ok  4 [chromium] › tests\login.spec.js:42:3 › Login Module › TC-LOGIN-004 | Password show/hide toggle works @regression (4.6s)
+  ok  5 [chromium] › tests\login.spec.js:50:3 › Login Module › TC-LOGIN-005 | Remember Me checkbox toggles correctly @regression (3.9s)
+  ok  6 [chromium] › tests\login.spec.js:61:3 › Login Module › TC-LOGIN-006 | Invalid credentials shows error message @smoke @negative (8.0s)
+  ok  7 [chromium] › tests\login.spec.js:69:3 › Login Module › TC-LOGIN-007 | Empty username and password blocked @regression @negative (8.3s)
+  ok  8 [chromium] › tests\login.spec.js:76:3 › Login Module › TC-LOGIN-008 | Valid username with empty password blocked @regression @negative (8.3s)
+  ok  9 [chromium] › tests\login.spec.js:83:3 › Login Module › TC-LOGIN-009 | Empty username with valid password blocked @regression @negative (8.2s)
+  ok 10 [chromium] › tests\login.spec.js:90:3 › Login Module › TC-LOGIN-010 | Wrong username with correct password rejected @regression @negative (7.9s)
+  ok 11 [chromium] › tests\login.spec.js:98:3 › Login Module › TC-LOGIN-011 | Correct username with wrong password rejected @regression @negative (8.0s)
+  ok 12 [chromium] › tests\login.spec.js:108:3 › Login Module › TC-LOGIN-012 | Username with 256 characters handled gracefully @regression (8.3s)
+  ok 13 [chromium] › tests\login.spec.js:116:3 › Login Module › TC-LOGIN-013 | Password with 256 characters handled gracefully @regression (8.6s)
+  ok 14 [chromium] › tests\login.spec.js:124:3 › Login Module › TC-LOGIN-014 | Whitespace-only username is rejected @regression (8.0s)
+  ok 15 [chromium] › tests\login.spec.js:131:3 › Login Module › TC-LOGIN-015 | Special characters in username handled safely @regression (8.0s)
+  ok 16 [chromium] › tests\login.spec.js:141:3 › Login Module › TC-LOGIN-016 | SQL injection in username handled safely @security (8.2s)
+  ok 17 [chromium] › tests\login.spec.js:149:3 › Login Module › TC-LOGIN-017 | SQL injection in password handled safely @security (8.7s)
+  ok 18 [chromium] › tests\login.spec.js:157:3 › Login Module › TC-LOGIN-018 | XSS payload in username handled safely @security (8.3s)
+  ok 19 [chromium] › tests\login.spec.js:165:3 › Login Module › TC-LOGIN-019 | Unauthenticated access redirects to login @security (5.6s)
+  ok 20 [chromium] › tests\login.spec.js:175:3 › Login Module › TC-LOGIN-020 | Username login is case-insensitive (behaviour confirmed) @regression (8.3s)
+
+  20 passed (2.6m)
