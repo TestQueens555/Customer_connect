@@ -1,38 +1,24 @@
 # ══════════════════════════════════════════════════════════════════════════════
-# Regression — Scheduled & On-Demand
+# regression.yml  —  Nightly & On-Demand Regression Suite
 #
-# REPOSITORY: https://github.com/TestQueens555/Customer_connect
+# Schedule : 12:00 AM UTC daily  (5:30 AM IST)
+# Manual   : workflow_dispatch with feature selector
 #
-# PURPOSE:
-#   Runs the full regression suite nightly and on demand.
-#   Updates featurewise Excel reports using --regression flag so history
-#   is preserved. Generates daily bug report. All reports uploaded as artifacts.
-#
-# SCHEDULE:
-#   Every night at 12:00 AM UTC  =  5:30 AM IST
-#
-# PIPELINE:
-#   pre-checks   → Reuses ci.yml (lint + smoke test gate)
-#   regression   → Full test run + Excel report generation + daily bug report
-#
-# ARTIFACTS (retained 60 days):
-#   featurewise-regression-reports-{run_id}   ← Featurewise Excel reports
-#   daily-bug-report-{run_id}                 ← Daily bug report Excel
-#   playwright-regression-html-{run_id}       ← HTML report
+# Pipeline :
+#   pre-checks  → ci.yml (lint + smoke gate)
+#   regression  → full test run → feature reports → daily bug report → commit
 # ══════════════════════════════════════════════════════════════════════════════
 
 name: Regression — Nightly & On-Demand
 
 on:
-  # Nightly at 12:00 AM UTC (5:30 AM IST)
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 0 * * *'    # 12:00 AM UTC = 5:30 AM IST
 
-  # Manual trigger with feature selector
   workflow_dispatch:
     inputs:
       feature:
-        description: 'Feature to run regression for (leave blank for all)'
+        description: 'Feature to regress (leave as "all" for full suite)'
         required: false
         default: 'all'
         type: choice
@@ -40,37 +26,40 @@ on:
           - all
           - Login
           - Dashboard
-          - Registration
-          - Profile
+          - CreateTicket
 
+# No cancel-in-progress — regression must always complete fully
 concurrency:
-  group: regression-${{ github.ref }}
+  group: regression-${{ github.run_id }}
   cancel-in-progress: false
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '22'
 
 jobs:
 
-  # ╔═══════════════════════════════════════════════════════════════════════════
-  # ║  JOB 1 — PRE-CHECKS (reuses ci.yml as mandatory gate)
-  # ╚═══════════════════════════════════════════════════════════════════════════
+  # ── Gate: lint + smoke ────────────────────────────────────────────────────
   pre-checks:
     name: Pre-Regression CI Checks
     uses: ./.github/workflows/ci.yml
 
-  # ╔═══════════════════════════════════════════════════════════════════════════
-  # ║  JOB 2 — FULL REGRESSION RUN
-  # ╚═══════════════════════════════════════════════════════════════════════════
+  # ── Full regression run ───────────────────────────────────────────────────
   regression:
     name: Full Regression Run
     runs-on: ubuntu-latest
     needs: pre-checks
     timeout-minutes: 60
+    permissions:
+      contents: write
 
     steps:
+
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
@@ -79,102 +68,149 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
 
-      # ── Run full test suite ────────────────────────────────────────────────────
-      - name: Run full test suite
-        run: npx playwright test --reporter=json,html,line
-        continue-on-error: true
-
-      # ── Generate Login regression report ──────────────────────────────────────
-      - name: Generate Login regression Excel report
-        run: node utils/generate-report.js --feature=Login --regression
-        continue-on-error: true
-
-      # ── Generate Dashboard regression report if spec exists ───────────────────
-      - name: Generate Dashboard regression Excel report
+      - name: Create output directories
         run: |
-          if [ -f "tests/dashboard.spec.js" ]; then
-            node utils/generate-report.js --feature=Dashboard --regression
+          mkdir -p reports/monocart reports/html-report reports/screenshots
+          mkdir -p "Test Execution Report/Feature Reports"
+          mkdir -p "Test Execution Report/Daily Reports"
+
+      # ── Run tests ───────────────────────────────────────────────────────────
+      - name: Run regression tests
+        run: |
+          FEATURE="${{ github.event.inputs.feature || 'all' }}"
+          if [ "$FEATURE" = "all" ]; then
+            npx playwright test
+          elif [ "$FEATURE" = "Login" ]; then
+            npx playwright test tests/login.spec.js
+          elif [ "$FEATURE" = "Dashboard" ]; then
+            npx playwright test tests/dashboard.spec.js
+          elif [ "$FEATURE" = "CreateTicket" ]; then
+            npx playwright test tests/createTicket.spec.js
           else
-            echo "dashboard.spec.js not found — skipping Dashboard report"
+            npx playwright test
           fi
         continue-on-error: true
 
-      # ── Generate reports for any additional feature spec files ─────────────────
-      - name: Generate all remaining feature reports
+      # ── Generate feature reports with --regression flag ─────────────────────
+      # The --regression flag preserves existing history and marks fixed bugs
+      - name: Generate regression Excel reports
+        if: always()
         run: |
-          for spec in tests/*.spec.js; do
-            feature=$(basename "$spec" .spec.js)
-            feature="$(tr '[:lower:]' '[:upper:]' <<< ${feature:0:1})${feature:1}"
-            if [ "$feature" != "Login" ] && [ "$feature" != "Dashboard" ]; then
-              echo "Generating report for: $feature"
-              node utils/generate-report.js --feature="$feature" --regression || true
-            fi
-          done
-        continue-on-error: true
+          FEATURE="${{ github.event.inputs.feature || 'all' }}"
 
-      # ── Generate daily bug report ──────────────────────────────────────────────
+          # Map of spec filename → feature name (handles camelCase correctly)
+          declare -A FEATURE_MAP
+          FEATURE_MAP["login"]="Login"
+          FEATURE_MAP["dashboard"]="Dashboard"
+          FEATURE_MAP["createTicket"]="CreateTicket"
+
+          if [ "$FEATURE" = "all" ]; then
+            for spec in tests/*.spec.js; do
+              fname=$(basename "$spec" .spec.js)
+              FEAT="${FEATURE_MAP[$fname]:-}"
+              if [ -z "$FEAT" ]; then
+                # Fallback: capitalise first letter only
+                FEAT="$(echo "${fname:0:1}" | tr '[:lower:]' '[:upper:]')${fname:1}"
+              fi
+              echo "→ Regression report: $FEAT"
+              node utils/generate-report.js --feature="$FEAT" --regression || true
+            done
+          else
+            node utils/generate-report.js --feature="$FEATURE" --regression || true
+          fi
+
+      # ── Daily bug report ────────────────────────────────────────────────────
       - name: Generate daily bug report
+        if: always()
         run: node utils/generate-daily-bug-report.js || true
 
-      # ── Save reference document ────────────────────────────────────────────────
-      - name: Save scripts reference document
+      # ── Save reference ──────────────────────────────────────────────────────
+      - name: Save reference document
+        if: always()
         run: node utils/save-reference.js || true
 
-      # ── Upload Playwright HTML report ──────────────────────────────────────────
-      - name: Upload Playwright HTML report
-        uses: actions/upload-artifact@v4
+      # ── Commit reports back to main ─────────────────────────────────────────
+      - name: Commit regression reports
         if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add "Test Execution Report/" || true
+
+          if git diff --cached --quiet; then
+            echo "No report changes — skipping commit"
+            exit 0
+          fi
+
+          DATE=$(date +'%Y-%m-%d %H:%M')
+          FEATURE="${{ github.event.inputs.feature || 'all' }}"
+          RUN_TYPE="${{ github.event_name == 'schedule' && 'Nightly' || 'Manual' }}"
+          git commit -m "Regression [$RUN_TYPE $DATE]: $FEATURE — reports updated"
+
+          PUSHED=false
+          for i in 1 2 3; do
+            echo "Push attempt $i..."
+            git pull --rebase origin main
+            if git push origin main; then
+              PUSHED=true
+              break
+            fi
+            sleep 10
+          done
+
+          [ "$PUSHED" = "true" ] && echo "✅ Reports pushed" || { echo "❌ Push failed"; exit 1; }
+
+      # ── Artifacts ───────────────────────────────────────────────────────────
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: playwright-regression-html-${{ github.run_id }}
+          name: regression-html-${{ github.run_id }}
           path: reports/html-report/
           retention-days: 60
+          if-no-files-found: warn
 
-      # ── Upload featurewise Excel reports ──────────────────────────────────────
-      - name: Upload Featurewise Regression Excel reports
-        uses: actions/upload-artifact@v4
+      - name: Upload Excel reports
         if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: featurewise-regression-reports-${{ github.run_id }}
-          path: |
-            Test Execution Report/
-            reports/*.xlsx
+          name: regression-excel-${{ github.run_id }}
+          path: Test Execution Report/
           retention-days: 60
+          if-no-files-found: warn
 
-      # ── Upload daily bug report ────────────────────────────────────────────────
-      - name: Upload Daily Bug Report
-        uses: actions/upload-artifact@v4
+      - name: Upload Daily Bug report
         if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: daily-bug-report-${{ github.run_id }}
           path: Test Execution Report/Daily Reports/
           retention-days: 60
+          if-no-files-found: warn
 
-      # ── Regression summary ─────────────────────────────────────────────────────
+      # ── Summary ──────────────────────────────────────────────────────────────
       - name: Write regression summary
         if: always()
         run: |
-          echo "### 🔄 CustomerConnect QA — Regression Run" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| **Repository** | [TestQueens555/Customer_connect](https://github.com/TestQueens555/Customer_connect) |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Run type** | ${{ github.event_name == 'schedule' && 'Nightly Scheduled' || 'Manual' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Feature** | ${{ github.event.inputs.feature || 'all' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Triggered by** | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **App URL** | http://customerportal.dev-ts.online |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📥 **featurewise-regression-reports** → Featurewise Excel reports" >> $GITHUB_STEP_SUMMARY
-          echo "📥 **daily-bug-report** → Today's bug report with tracker comparison" >> $GITHUB_STEP_SUMMARY
-
-      - name: Regression failure notice
-        if: failure()
-        run: |
-          echo "### ❌ Regression Run Failed" >> $GITHUB_STEP_SUMMARY
-          echo "Check the logs above to identify failures." >> $GITHUB_STEP_SUMMARY
-          echo "Download the Excel artifact to review FAIL/BUG entries." >> $GITHUB_STEP_SUMMARY
+          FEATURE="${{ github.event.inputs.feature || 'all' }}"
+          RUN_TYPE="${{ github.event_name == 'schedule' && 'Nightly Scheduled' || 'Manual' }}"
+          {
+            echo "### 🔄 Regression Run — $RUN_TYPE"
+            echo "| Field | Value |"
+            echo "|-------|-------|"
+            echo "| **Feature** | $FEATURE |"
+            echo "| **Run type** | $RUN_TYPE |"
+            echo "| **Triggered by** | @${{ github.actor }} |"
+            echo "| **App URL** | http://customerportal.dev-ts.online |"
+            echo ""
+            echo "### 📥 Artifacts"
+            echo "- \`regression-html-${{ github.run_id }}\`"
+            echo "- \`regression-excel-${{ github.run_id }}\`"
+            echo "- \`daily-bug-report-${{ github.run_id }}\`"
+          } >> $GITHUB_STEP_SUMMARY

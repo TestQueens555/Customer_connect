@@ -24,7 +24,9 @@ on:
   workflow_call:
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # Use run_id when called from another workflow so it never
+  # cancels a real PR check running at the same time
+  group: ci-${{ github.event_name == 'workflow_call' && github.run_id || github.ref }}
   cancel-in-progress: true
 
 env:

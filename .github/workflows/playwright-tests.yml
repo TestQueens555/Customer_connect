@@ -1,3 +1,11 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# playwright-tests.yml  —  THE ONLY active push/PR workflow
+#
+# Triggers : push to main, PR to main, manual
+# Does     : detect changed feature → run tests → generate Excel reports
+#            → commit reports back to main (with retry)
+# ══════════════════════════════════════════════════════════════════════════════
+
 name: Playwright E2E Tests + Reports
 
 on:
@@ -7,75 +15,76 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# Cancel any in-flight run for the same branch/PR so only the latest commit runs
+concurrency:
+  group: playwright-tests-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     name: Run E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
-
-    # Allow CI to push Excel reports back to main
     permissions:
-      contents: write
+      contents: write        # needed to commit Excel reports back to main
 
     steps:
 
-      # ── 1. Checkout ───────────────────────────────────────────────
+      # ── 1. Checkout ───────────────────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: main
+          ref: main          # always tip of main, not the SHA that triggered
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # ── 2. Node.js ────────────────────────────────────────────────
+      # ── 2. Node.js ────────────────────────────────────────────────────────
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
 
-      # ── 3. Dependencies ───────────────────────────────────────────
+      # ── 3. Dependencies ───────────────────────────────────────────────────
       - name: Install dependencies
         run: npm ci
 
-      # ── 4. Playwright browser ─────────────────────────────────────
+      # ── 4. Playwright browser ─────────────────────────────────────────────
       - name: Install Playwright + Chromium
         run: npx playwright install --with-deps chromium
 
-      # ── 5. Detect which tests to run ──────────────────────────────
-      - name: Detect changed files and set test scope
+      # ── 5. Detect which feature changed ──────────────────────────────────
+      - name: Detect changed feature
         id: scope
         run: |
+          # Compare last two commits; fall back to "all" on first commit
           CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "all")
-          echo "Changed: $CHANGED"
+          echo "Changed files: $CHANGED"
 
-          if echo "$CHANGED" | grep -q "tests/login\|pages/LoginPage\|test-data/loginData"; then
-            echo "test_path=tests/login.spec.js" >> $GITHUB_OUTPUT
-            echo "feature=Login"                 >> $GITHUB_OUTPUT
-            echo "label=Login Module"            >> $GITHUB_OUTPUT
-          elif echo "$CHANGED" | grep -q "tests/dashboard\|pages/DashboardPage\|test-data/dashboardData"; then
-            echo "test_path=tests/dashboard.spec.js" >> $GITHUB_OUTPUT
-            echo "feature=Dashboard"                 >> $GITHUB_OUTPUT
-            echo "label=Dashboard Module"            >> $GITHUB_OUTPUT
-          elif echo "$CHANGED" | grep -q "tests/createTicket\|pages/CreateTicketPage\|test-data/createTicketData"; then
-            echo "test_path=tests/createTicket.spec.js" >> $GITHUB_OUTPUT
-            echo "feature=CreateTicket"                 >> $GITHUB_OUTPUT
-            echo "label=Create Ticket Module"           >> $GITHUB_OUTPUT
+          if echo "$CHANGED" | grep -qE "tests/login|pages/LoginPage|test-data/loginData"; then
+            TEST_PATH="tests/login.spec.js"; FEATURE="Login";        LABEL="Login Module"
+          elif echo "$CHANGED" | grep -qE "tests/dashboard|pages/DashboardPage|test-data/dashboardData"; then
+            TEST_PATH="tests/dashboard.spec.js"; FEATURE="Dashboard"; LABEL="Dashboard Module"
+          elif echo "$CHANGED" | grep -qE "tests/createTicket|pages/CreateTicketPage|test-data/createTicketData"; then
+            TEST_PATH="tests/createTicket.spec.js"; FEATURE="CreateTicket"; LABEL="Create Ticket Module"
           else
-            echo "test_path=all"     >> $GITHUB_OUTPUT
-            echo "feature=All"       >> $GITHUB_OUTPUT
-            echo "label=Full Suite"  >> $GITHUB_OUTPUT
+            TEST_PATH="all"; FEATURE="All"; LABEL="Full Suite"
           fi
 
-      # ── 6. Create output folders ──────────────────────────────────
+          echo "test_path=$TEST_PATH" >> $GITHUB_OUTPUT
+          echo "feature=$FEATURE"     >> $GITHUB_OUTPUT
+          echo "label=$LABEL"         >> $GITHUB_OUTPUT
+          echo "Scope → $LABEL ($TEST_PATH)"
+
+      # ── 6. Create output folders ──────────────────────────────────────────
       - name: Create output directories
         run: |
           mkdir -p reports/monocart reports/html-report reports/screenshots
           mkdir -p "Test Execution Report/Feature Reports"
           mkdir -p "Test Execution Report/Daily Reports"
 
-      # ── 7. Run Playwright tests ───────────────────────────────────
-      - name: "Run tests — ${{ steps.scope.outputs.label }}"
+      # ── 7. Run Playwright tests ───────────────────────────────────────────
+      - name: "Run — ${{ steps.scope.outputs.label }}"
         id: playwright
         run: |
           if [ "${{ steps.scope.outputs.test_path }}" = "all" ]; then
@@ -83,34 +92,32 @@ jobs:
           else
             npx playwright test ${{ steps.scope.outputs.test_path }}
           fi
-        continue-on-error: true
+        continue-on-error: true   # always generate reports even if tests fail
 
-      # ── 8. Generate Feature Excel report ─────────────────────────
+      # ── 8. Generate Feature Excel report ─────────────────────────────────
       - name: Generate Feature Excel report
         if: always()
         run: |
           FEATURE="${{ steps.scope.outputs.feature }}"
           if [ "$FEATURE" = "All" ]; then
-            # Generate report for each spec that exists
             for spec in tests/*.spec.js; do
+              # Convert filename to PascalCase feature name
               fname=$(basename "$spec" .spec.js)
-              FEAT="${fname^}"
-              echo "Generating report for $FEAT..."
-              node utils/generate-report.js --feature=$FEAT || true
+              FEAT="$(echo "${fname:0:1}" | tr '[:lower:]' '[:upper:]')${fname:1}"
+              echo "→ Generating report for $FEAT"
+              node utils/generate-report.js --feature="$FEAT" || true
             done
           else
-            node utils/generate-report.js --feature=$FEATURE
+            node utils/generate-report.js --feature="$FEATURE"
           fi
 
-      # ── 9. Generate Daily Bug report ─────────────────────────────
+      # ── 9. Generate Daily Bug report ──────────────────────────────────────
       - name: Generate Daily Bug report
         if: always()
-        run: |
-          FEATURE="${{ steps.scope.outputs.feature }}"
-          node utils/generate-daily-report.js --feature=$FEATURE
+        run: node utils/generate-daily-bug-report.js || true
 
-      # ── 10. Commit and push Excel reports back to repo ────────────
-      - name: Commit Excel reports to repository
+      # ── 10. Commit Excel reports back to main ─────────────────────────────
+      - name: Commit and push Excel reports
         if: always() && github.ref == 'refs/heads/main'
         run: |
           git config user.name  "github-actions[bot]"
@@ -119,16 +126,15 @@ jobs:
           git add "Test Execution Report/" || true
 
           if git diff --cached --quiet; then
-            echo "No report changes to commit — skipping push"
+            echo "No report changes — skipping commit"
             exit 0
           fi
 
           DATE=$(date +'%Y-%m-%d %H:%M')
-          FEATURE="${{ steps.scope.outputs.feature }}"
-          git commit -m "CI Reports [$DATE]: $FEATURE — Excel reports updated"
+          git commit -m "CI Reports [$DATE]: ${{ steps.scope.outputs.feature }} — Excel reports updated"
 
-          # Push with up to 3 retries — each attempt pulls rebase first
-          # so concurrent local pushes or other CI commits never block us
+          # Retry up to 3 times with pull --rebase before each push
+          # Handles the race where a local push landed after our checkout
           PUSHED=false
           for i in 1 2 3; do
             echo "Push attempt $i..."
@@ -137,18 +143,18 @@ jobs:
               PUSHED=true
               break
             fi
-            echo "Attempt $i failed — waiting 10s before retry..."
+            echo "  → failed, retrying in 10 s..."
             sleep 10
           done
 
           if [ "$PUSHED" = "true" ]; then
-            echo "✅ Excel reports pushed to repo"
+            echo "✅ Excel reports pushed"
           else
-            echo "❌ All 3 push attempts failed"
+            echo "❌ All push attempts failed"
             exit 1
           fi
 
-      # ── 11. Upload Monocart report artifact ───────────────────────
+      # ── 11. Upload Monocart HTML report as artifact ───────────────────────
       - name: Upload Monocart report
         if: always()
         uses: actions/upload-artifact@v4
@@ -158,7 +164,7 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
-      # ── 12. Upload Playwright HTML report ─────────────────────────
+      # ── 12. Upload Playwright HTML report as artifact ─────────────────────
       - name: Upload Playwright HTML report
         if: always()
         uses: actions/upload-artifact@v4
@@ -168,33 +174,43 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
-      # ── 13. Job summary ───────────────────────────────────────────
+      # ── 13. GitHub job summary ────────────────────────────────────────────
       - name: Write job summary
         if: always()
         run: |
+          # Parse test-results.json for counts
           if [ -f reports/test-results.json ]; then
-            TOTAL=$(node -e "try{const r=require('./reports/test-results.json');const t=r.suites?.flatMap(s=>s.specs?.flatMap(sp=>sp.tests)||[])||[];console.log(t.length)}catch{console.log('?')}" 2>/dev/null)
-            PASSED=$(node -e "try{const r=require('./reports/test-results.json');const t=r.suites?.flatMap(s=>s.specs?.flatMap(sp=>sp.tests)||[])||[];console.log(t.filter(x=>x.results?.[0]?.status==='passed').length)}catch{console.log('?')}" 2>/dev/null)
-            FAILED=$(node -e "try{const r=require('./reports/test-results.json');const t=r.suites?.flatMap(s=>s.specs?.flatMap(sp=>sp.tests)||[])||[];console.log(t.filter(x=>x.results?.[0]?.status==='failed').length)}catch{console.log('?')}" 2>/dev/null)
+            PARSE='
+              const r=require("./reports/test-results.json");
+              const all=r.suites?.flatMap(s=>s.specs?.flatMap(sp=>sp.tests)||[])||[];
+              const s=all.map(t=>t.results?.[0]?.status);
+              process.stdout.write([all.length,s.filter(x=>x==="passed").length,s.filter(x=>x==="failed").length].join(","));
+            '
+            COUNTS=$(node -e "$PARSE" 2>/dev/null || echo "?,?,?")
+            TOTAL=$(echo "$COUNTS" | cut -d, -f1)
+            PASSED=$(echo "$COUNTS" | cut -d, -f2)
+            FAILED=$(echo "$COUNTS" | cut -d, -f3)
           else
             TOTAL="?"; PASSED="?"; FAILED="?"
           fi
 
-          echo "## 🧪 ${{ steps.scope.outputs.label }} | Run #${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
-          echo "| | |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| **Triggered by** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Scope** | ${{ steps.scope.outputs.label }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Total** | $TOTAL |" >> $GITHUB_STEP_SUMMARY
-          echo "| **✅ Passed** | $PASSED |" >> $GITHUB_STEP_SUMMARY
-          echo "| **❌ Failed** | $FAILED |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📁 Reports saved to repository" >> $GITHUB_STEP_SUMMARY
-          echo "| Folder | Contents |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|---------|" >> $GITHUB_STEP_SUMMARY
-          echo "| \`Test Execution Report/Feature Reports/\` | ${{ steps.scope.outputs.feature }}.xlsx |" >> $GITHUB_STEP_SUMMARY
-          echo "| \`Test Execution Report/Daily Reports/\` | DailyBugReport_$(date +%Y-%m-%d).xlsx |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📥 Artifacts (download and double-click index.html)" >> $GITHUB_STEP_SUMMARY
-          echo "- \`monocart-report-run-${{ github.run_number }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- \`playwright-report-run-${{ github.run_number }}\`" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## 🧪 ${{ steps.scope.outputs.label }} | Run #${{ github.run_number }}"
+            echo "| Metric | Value |"
+            echo "|--------|-------|"
+            echo "| **Triggered by** | ${{ github.actor }} |"
+            echo "| **Scope** | ${{ steps.scope.outputs.label }} |"
+            echo "| **Total TCs** | $TOTAL |"
+            echo "| **✅ Passed** | $PASSED |"
+            echo "| **❌ Failed** | $FAILED |"
+            echo ""
+            echo "### 📁 Reports committed to repository"
+            echo "| Path | File |"
+            echo "|------|------|"
+            echo "| \`Test Execution Report/Feature Reports/\` | \`${{ steps.scope.outputs.feature }}.xlsx\` |"
+            echo "| \`Test Execution Report/Daily Reports/\` | \`BugReport_$(date +%d-%b-%Y).xlsx\` |"
+            echo ""
+            echo "### 📥 Downloadable artifacts"
+            echo "- \`monocart-report-run-${{ github.run_number }}\` — open \`index.html\`"
+            echo "- \`playwright-report-run-${{ github.run_number }}\` — open \`index.html\`"
+          } >> $GITHUB_STEP_SUMMARY
