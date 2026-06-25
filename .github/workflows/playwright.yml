@@ -102,7 +102,7 @@ jobs:
         with:
           name: featurewise-test-reports-${{ github.run_id }}
           path: |
-            Featurewise Test Report/
+            Test Execution Report/
             reports/*.xlsx
           retention-days: 30
 

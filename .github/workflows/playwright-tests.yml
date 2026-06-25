@@ -125,8 +125,14 @@ jobs:
           DATE=$(date +'%Y-%m-%d %H:%M')
           FEATURE="${{ steps.scope.outputs.feature }}"
           git commit -m "CI Reports [$DATE]: $FEATURE — Excel reports updated"
-          git push origin main
-          echo "✅ Excel reports pushed to repo"
+
+          # Retry loop: pull --rebase then push (handles concurrent CI commits)
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push origin main && echo "✅ Reports pushed" && exit 0
+            echo "Push attempt $i failed — retrying after 5s..."
+            sleep 5
+          done
+          echo "❌ All push attempts failed" && exit 1
 
       # ── 11. Upload Monocart report artifact ───────────────────────
       - name: Upload Monocart report
