@@ -25,7 +25,7 @@ module.exports = {
 
   boundary: {
     descriptionMin:      'Exactly 15chars!',       // exactly 15 chars
-    descriptionMin14:    '14charsonlyhere',         // 14 chars — should fail
+    descriptionMin14:    '14charsonly!!!',           // exactly 14 chars — should fail
     descriptionMax:      'A'.repeat(2000),           // exactly 2000 chars
     descriptionOver:     'A'.repeat(2001),           // 2001 chars — over limit
     descriptionEmpty:    '',

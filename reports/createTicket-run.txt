@@ -2,367 +2,45 @@
 Running 20 tests using 1 worker
 
 ✅ TC-TICKET-001 PASSED — Page loaded with all fields
-  ok  1 [chromium] › tests\createTicket.spec.js:29:3 › Create Ticket Module — E2E Tests › TC-TICKET-001 | Create Ticket page loads with all required fields (14.5s)
+  ok  1 [chromium] › tests\createTicket.spec.js:29:3 › Create Ticket Module — E2E Tests › TC-TICKET-001 | Create Ticket page loads with all required fields (16.3s)
 ✅ TC-TICKET-002 PASSED — Ticket submitted without missing information errors
-  ok  2 [chromium] › tests\createTicket.spec.js:41:3 › Create Ticket Module — E2E Tests › TC-TICKET-002 | Submit ticket with all required fields filled (15.7s)
+  ok  2 [chromium] › tests\createTicket.spec.js:41:3 › Create Ticket Module — E2E Tests › TC-TICKET-002 | Submit ticket with all required fields filled (18.7s)
 ✅ TC-TICKET-003 PASSED — 3 projects found: PRJ0008 - YSG Inventory, PRJ0021 - YSG Loyalty, YSGINV-P1 - YSG Inventory Project
-  ok  3 [chromium] › tests\createTicket.spec.js:52:3 › Create Ticket Module — E2E Tests › TC-TICKET-003 | Project dropdown shows all available projects (11.9s)
+  ok  3 [chromium] › tests\createTicket.spec.js:52:3 › Create Ticket Module — E2E Tests › TC-TICKET-003 | Project dropdown shows all available projects (12.7s)
 ✅ TC-TICKET-004 PASSED — Platform unlocked after project selection
-  ok  4 [chromium] › tests\createTicket.spec.js:63:3 › Create Ticket Module — E2E Tests › TC-TICKET-004 | Selecting project unlocks Platform dropdown (12.8s)
-  x   5 [chromium] › tests\createTicket.spec.js:75:3 › Create Ticket Module — E2E Tests › TC-TICKET-005 | All Ticket Type chips are visible (15.9s)
-  x   6 [chromium] › tests\createTicket.spec.js:75:3 › Create Ticket Module — E2E Tests › TC-TICKET-005 | All Ticket Type chips are visible (retry #1) (20.5s)
-  x   7 [chromium] › tests\createTicket.spec.js:84:3 › Create Ticket Module — E2E Tests › TC-TICKET-006 | Description character counter updates on input (15.5s)
-  x   8 [chromium] › tests\createTicket.spec.js:84:3 › Create Ticket Module — E2E Tests › TC-TICKET-006 | Description character counter updates on input (retry #1) (16.1s)
-  x   9 [chromium] › tests\createTicket.spec.js:96:3 › Create Ticket Module — E2E Tests › TC-TICKET-007 | Reset button clears all filled fields (16.1s)
-  x  10 [chromium] › tests\createTicket.spec.js:96:3 › Create Ticket Module — E2E Tests › TC-TICKET-007 | Reset button clears all filled fields (retry #1) (16.7s)
+  ok  4 [chromium] › tests\createTicket.spec.js:63:3 › Create Ticket Module — E2E Tests › TC-TICKET-004 | Selecting project unlocks Platform dropdown (13.2s)
+✅ TC-TICKET-005 PASSED — All ticket type chips visible
+  ok  5 [chromium] › tests\createTicket.spec.js:76:3 › Create Ticket Module — E2E Tests › TC-TICKET-005 | All Ticket Type chips are visible (11.8s)
+✅ TC-TICKET-006 PASSED — Char counter shows: 32 / 2000
+  ok  6 [chromium] › tests\createTicket.spec.js:85:3 › Create Ticket Module — E2E Tests › TC-TICKET-006 | Description character counter updates on input (11.3s)
+✅ TC-TICKET-007 PASSED — Reset clears form fields
+  ok  7 [chromium] › tests\createTicket.spec.js:98:3 › Create Ticket Module — E2E Tests › TC-TICKET-007 | Reset button clears all filled fields (12.7s)
 ✅ TC-TICKET-008 PASSED — Page/Screen Name is optional
-  ok 11 [chromium] › tests\createTicket.spec.js:111:3 › Create Ticket Module — E2E Tests › TC-TICKET-008 | Page/Screen Name field is optional (19.4s)
+  ok  8 [chromium] › tests\createTicket.spec.js:121:3 › Create Ticket Module — E2E Tests › TC-TICKET-008 | Page/Screen Name field is optional (20.4s)
 ✅ TC-TICKET-009 PASSED — Validation popup shown for empty form
-  ok 12 [chromium] › tests\createTicket.spec.js:127:3 › Create Ticket Module — E2E Tests › TC-TICKET-009 | Submit with no fields filled shows validation popup (12.0s)
-✅ TC-TICKET-010 PASSED — Validation shown, content: Please provide the following mandatory details:ProjectPlatform
-  ok 13 [chromium] › tests\createTicket.spec.js:137:3 › Create Ticket Module — E2E Tests › TC-TICKET-010 | Submit without Project shows Missing Information (12.9s)
+  ok  9 [chromium] › tests\createTicket.spec.js:137:3 › Create Ticket Module — E2E Tests › TC-TICKET-009 | Submit with no fields filled shows validation popup (13.4s)
+✅ TC-TICKET-010 PASSED — Validation shown for missing Project
+  ok 10 [chromium] › tests\createTicket.spec.js:147:3 › Create Ticket Module — E2E Tests › TC-TICKET-010 | Submit without Project shows Missing Information (13.6s)
 ✅ TC-TICKET-011 PASSED — Missing Ticket Type flagged
-  ok 14 [chromium] › tests\createTicket.spec.js:151:3 › Create Ticket Module — E2E Tests › TC-TICKET-011 | Submit without Ticket Type shows validation error (15.1s)
+  ok 11 [chromium] › tests\createTicket.spec.js:160:3 › Create Ticket Module — E2E Tests › TC-TICKET-011 | Submit without Ticket Type shows validation error (15.9s)
 ✅ TC-TICKET-012 PASSED — Missing Description flagged
-  ok 15 [chromium] › tests\createTicket.spec.js:165:3 › Create Ticket Module — E2E Tests › TC-TICKET-012 | Submit without Description shows validation error (15.9s)
+  ok 12 [chromium] › tests\createTicket.spec.js:174:3 › Create Ticket Module — E2E Tests › TC-TICKET-012 | Submit without Description shows validation error (16.3s)
 ✅ TC-TICKET-013 PASSED — Missing Platform flagged
-  ok 16 [chromium] › tests\createTicket.spec.js:179:3 › Create Ticket Module — E2E Tests › TC-TICKET-013 | Submit without Platform shows validation error (15.2s)
-  x  17 [chromium] › tests\createTicket.spec.js:195:3 › Create Ticket Module — E2E Tests › TC-TICKET-014 | Description with exactly 14 chars fails validation (17.3s)
-  x  18 [chromium] › tests\createTicket.spec.js:195:3 › Create Ticket Module — E2E Tests › TC-TICKET-014 | Description with exactly 14 chars fails validation (retry #1) (20.9s)
+  ok 13 [chromium] › tests\createTicket.spec.js:188:3 › Create Ticket Module — E2E Tests › TC-TICKET-013 | Submit without Platform shows validation error (15.6s)
+✅ TC-TICKET-014 PASSED — 14-char description rejected
+  ok 14 [chromium] › tests\createTicket.spec.js:204:3 › Create Ticket Module — E2E Tests › TC-TICKET-014 | Description with exactly 14 chars fails validation (17.4s)
 ✅ TC-TICKET-015 PASSED — 15-char description accepted
-  ok 19 [chromium] › tests\createTicket.spec.js:210:3 › Create Ticket Module — E2E Tests › TC-TICKET-015 | Description with exactly 15 chars passes validation (19.6s)
-  x  20 [chromium] › tests\createTicket.spec.js:224:3 › Create Ticket Module — E2E Tests › TC-TICKET-016 | Description at 2000 chars (max) is accepted (10.7s)
-  x  21 [chromium] › tests\createTicket.spec.js:224:3 › Create Ticket Module — E2E Tests › TC-TICKET-016 | Description at 2000 chars (max) is accepted (retry #1) (15.7s)
+  ok 15 [chromium] › tests\createTicket.spec.js:224:3 › Create Ticket Module — E2E Tests › TC-TICKET-015 | Description with exactly 15 chars passes validation (16.3s)
+✅ TC-TICKET-016 PASSED — 2000-char description accepted, counter: 2000 / 2000
+  ok 16 [chromium] › tests\createTicket.spec.js:238:3 › Create Ticket Module — E2E Tests › TC-TICKET-016 | Description at 2000 chars (max) is accepted (11.5s)
 ✅ TC-TICKET-017 PASSED — Platform chips visible after project selection
-  ok 22 [chromium] › tests\createTicket.spec.js:234:3 › Create Ticket Module — E2E Tests › TC-TICKET-017 | Platform chips show all expected options after project selected (18.2s)
+  ok 17 [chromium] › tests\createTicket.spec.js:249:3 › Create Ticket Module — E2E Tests › TC-TICKET-017 | Platform chips show all expected options after project selected (13.3s)
 ✅ TC-TICKET-018 PASSED — SQL injection handled, page: Create Ticket - Support
-  ok 23 [chromium] › tests\createTicket.spec.js:248:3 › Create Ticket Module — E2E Tests › TC-TICKET-018 | SQL injection in description is handled safely (16.0s)
+  ok 18 [chromium] › tests\createTicket.spec.js:263:3 › Create Ticket Module — E2E Tests › TC-TICKET-018 | SQL injection in description is handled safely (17.1s)
 ✅ TC-TICKET-019 PASSED — XSS payload handled safely
-  ok 24 [chromium] › tests\createTicket.spec.js:262:3 › Create Ticket Module — E2E Tests › TC-TICKET-019 | XSS payload in description is handled safely (16.0s)
+  ok 19 [chromium] › tests\createTicket.spec.js:278:3 › Create Ticket Module — E2E Tests › TC-TICKET-019 | XSS payload in description is handled safely (16.1s)
 ✅ TC-TICKET-020 PASSED — Unauthenticated access redirected to login
-  ok 25 [chromium] › tests\createTicket.spec.js:276:3 › Create Ticket Module — E2E Tests › TC-TICKET-020 | Unauthenticated user is redirected to login page (12.6s)
+  ok 20 [chromium] › tests\createTicket.spec.js:293:3 › Create Ticket Module — E2E Tests › TC-TICKET-020 | Unauthenticated user is redirected to login page (13.1s)
 
-
-  1) [chromium] › tests\createTicket.spec.js:75:3 › Create Ticket Module — E2E Tests › TC-TICKET-005 | All Ticket Type chips are visible 
-
-    Error: expect(locator).toBeVisible() failed
-
-    Locator:  locator('text=SCR').first()
-    Expected: visible
-    Received: hidden
-    Timeout:  5000ms
-
-    Call log:
-      - Expect "toBeVisible" with timeout 5000ms
-      - waiting for locator('text=SCR').first()
-        13 × locator resolved to <span class="ct-step-label">Description</span>
-           - unexpected value "hidden"
-
-
-      77 |     for (const type of ticketData.ticketTypes) {
-      78 |       const chip = page.locator('text=' + type).first();
-    > 79 |       await expect(chip).toBeVisible();
-         |                          ^
-      80 |     }
-      81 |     console.log('✅ TC-TICKET-005 PASSED — All ticket type chips visible');
-      82 |   });
-        at D:\Claude\QA_Projects\CustomerConnect\tests\createTicket.spec.js:79:26
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-f421c-cket-Type-chips-are-visible-chromium\test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-f421c-cket-Type-chips-are-visible-chromium\video.webm
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: reports\screenshots\createTicket-Create-Ticket-f421c-cket-Type-chips-are-visible-chromium\error-context.md
-
-    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
-
-    Error: expect(locator).toBeVisible() failed
-
-    Locator:  locator('text=SCR').first()
-    Expected: visible
-    Received: hidden
-    Timeout:  5000ms
-
-    Call log:
-      - Expect "toBeVisible" with timeout 5000ms
-      - waiting for locator('text=SCR').first()
-        13 × locator resolved to <span class="ct-step-label">Description</span>
-           - unexpected value "hidden"
-
-
-      77 |     for (const type of ticketData.ticketTypes) {
-      78 |       const chip = page.locator('text=' + type).first();
-    > 79 |       await expect(chip).toBeVisible();
-         |                          ^
-      80 |     }
-      81 |     console.log('✅ TC-TICKET-005 PASSED — All ticket type chips visible');
-      82 |   });
-        at D:\Claude\QA_Projects\CustomerConnect\tests\createTicket.spec.js:79:26
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-f421c-cket-Type-chips-are-visible-chromium-retry1\test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-f421c-cket-Type-chips-are-visible-chromium-retry1\video.webm
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: reports\screenshots\createTicket-Create-Ticket-f421c-cket-Type-chips-are-visible-chromium-retry1\error-context.md
-
-    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-f421c-cket-Type-chips-are-visible-chromium-retry1\trace.zip
-    Usage:
-
-        npx playwright show-trace reports\screenshots\createTicket-Create-Ticket-f421c-cket-Type-chips-are-visible-chromium-retry1\trace.zip
-
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-  2) [chromium] › tests\createTicket.spec.js:84:3 › Create Ticket Module — E2E Tests › TC-TICKET-006 | Description character counter updates on input 
-
-    Error: expect(received).not.toBe(expected) // Object.is equality
-
-    Expected: not "0 / 2000"
-
-      88 |     // -- Step 2: Verify counter shows non-zero --
-      89 |     const charCount = await ticketPage.getCharCount();
-    > 90 |     expect(charCount).not.toBe('0 / 2000');
-         |                           ^
-      91 |     const count = parseInt(charCount.split(' / ')[0]);
-      92 |     expect(count).toBe(sampleText.length);
-      93 |     console.log(`✅ TC-TICKET-006 PASSED — Char counter shows: ${charCount}`);
-        at D:\Claude\QA_Projects\CustomerConnect\tests\createTicket.spec.js:90:27
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-2d77d-er-counter-updates-on-input-chromium\test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-2d77d-er-counter-updates-on-input-chromium\video.webm
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: reports\screenshots\createTicket-Create-Ticket-2d77d-er-counter-updates-on-input-chromium\error-context.md
-
-    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
-
-    Error: expect(received).not.toBe(expected) // Object.is equality
-
-    Expected: not "0 / 2000"
-
-      88 |     // -- Step 2: Verify counter shows non-zero --
-      89 |     const charCount = await ticketPage.getCharCount();
-    > 90 |     expect(charCount).not.toBe('0 / 2000');
-         |                           ^
-      91 |     const count = parseInt(charCount.split(' / ')[0]);
-      92 |     expect(count).toBe(sampleText.length);
-      93 |     console.log(`✅ TC-TICKET-006 PASSED — Char counter shows: ${charCount}`);
-        at D:\Claude\QA_Projects\CustomerConnect\tests\createTicket.spec.js:90:27
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-2d77d-er-counter-updates-on-input-chromium-retry1\test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-2d77d-er-counter-updates-on-input-chromium-retry1\video.webm
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: reports\screenshots\createTicket-Create-Ticket-2d77d-er-counter-updates-on-input-chromium-retry1\error-context.md
-
-    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-2d77d-er-counter-updates-on-input-chromium-retry1\trace.zip
-    Usage:
-
-        npx playwright show-trace reports\screenshots\createTicket-Create-Ticket-2d77d-er-counter-updates-on-input-chromium-retry1\trace.zip
-
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-  3) [chromium] › tests\createTicket.spec.js:96:3 › Create Ticket Module — E2E Tests › TC-TICKET-007 | Reset button clears all filled fields 
-
-    Error: expect(received).toBe(expected) // Object.is equality
-
-    Expected: ""
-    Received: "Some description text here"
-
-      105 |       () => ticketPage.descriptionInput.textContent()
-      106 |     );
-    > 107 |     expect(descValue?.trim()).toBe('');
-          |                               ^
-      108 |     console.log('✅ TC-TICKET-007 PASSED — Reset clears form fields');
-      109 |   });
-      110 |
-        at D:\Claude\QA_Projects\CustomerConnect\tests\createTicket.spec.js:107:31
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-b1587-on-clears-all-filled-fields-chromium\test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-b1587-on-clears-all-filled-fields-chromium\video.webm
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: reports\screenshots\createTicket-Create-Ticket-b1587-on-clears-all-filled-fields-chromium\error-context.md
-
-    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
-
-    Error: expect(received).toBe(expected) // Object.is equality
-
-    Expected: ""
-    Received: "Some description text here"
-
-      105 |       () => ticketPage.descriptionInput.textContent()
-      106 |     );
-    > 107 |     expect(descValue?.trim()).toBe('');
-          |                               ^
-      108 |     console.log('✅ TC-TICKET-007 PASSED — Reset clears form fields');
-      109 |   });
-      110 |
-        at D:\Claude\QA_Projects\CustomerConnect\tests\createTicket.spec.js:107:31
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-b1587-on-clears-all-filled-fields-chromium-retry1\test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-b1587-on-clears-all-filled-fields-chromium-retry1\video.webm
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: reports\screenshots\createTicket-Create-Ticket-b1587-on-clears-all-filled-fields-chromium-retry1\error-context.md
-
-    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-b1587-on-clears-all-filled-fields-chromium-retry1\trace.zip
-    Usage:
-
-        npx playwright show-trace reports\screenshots\createTicket-Create-Ticket-b1587-on-clears-all-filled-fields-chromium-retry1\trace.zip
-
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-  4) [chromium] › tests\createTicket.spec.js:195:3 › Create Ticket Module — E2E Tests › TC-TICKET-014 | Description with exactly 14 chars fails validation 
-
-    Error: expect(received).toMatch(expected)
-
-    Expected pattern: /Description/i
-    Received string:  "Are you sure you want to log this ticket? Our team will review it shortly."
-
-      204 |     await expect(ticketPage.swalPopup).toBeVisible();
-      205 |     const content = await ticketPage.getSwalContent();
-    > 206 |     expect(content).toMatch(/Description/i);
-          |                     ^
-      207 |     console.log('✅ TC-TICKET-014 PASSED — 14-char description rejected');
-      208 |   });
-      209 |
-        at D:\Claude\QA_Projects\CustomerConnect\tests\createTicket.spec.js:206:21
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-d4172-y-14-chars-fails-validation-chromium\test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-d4172-y-14-chars-fails-validation-chromium\video.webm
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: reports\screenshots\createTicket-Create-Ticket-d4172-y-14-chars-fails-validation-chromium\error-context.md
-
-    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
-
-    Error: expect(received).toMatch(expected)
-
-    Expected pattern: /Description/i
-    Received string:  "Are you sure you want to log this ticket? Our team will review it shortly."
-
-      204 |     await expect(ticketPage.swalPopup).toBeVisible();
-      205 |     const content = await ticketPage.getSwalContent();
-    > 206 |     expect(content).toMatch(/Description/i);
-          |                     ^
-      207 |     console.log('✅ TC-TICKET-014 PASSED — 14-char description rejected');
-      208 |   });
-      209 |
-        at D:\Claude\QA_Projects\CustomerConnect\tests\createTicket.spec.js:206:21
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-d4172-y-14-chars-fails-validation-chromium-retry1\test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-d4172-y-14-chars-fails-validation-chromium-retry1\video.webm
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: reports\screenshots\createTicket-Create-Ticket-d4172-y-14-chars-fails-validation-chromium-retry1\error-context.md
-
-    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-d4172-y-14-chars-fails-validation-chromium-retry1\trace.zip
-    Usage:
-
-        npx playwright show-trace reports\screenshots\createTicket-Create-Ticket-d4172-y-14-chars-fails-validation-chromium-retry1\trace.zip
-
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-  5) [chromium] › tests\createTicket.spec.js:224:3 › Create Ticket Module — E2E Tests › TC-TICKET-016 | Description at 2000 chars (max) is accepted 
-
-    Error: expect(received).toBe(expected) // Object.is equality
-
-    Expected: 2000
-    Received: 0
-
-      228 |     const charCount = await ticketPage.getCharCount();
-      229 |     const count = parseInt(charCount.split(' / ')[0]);
-    > 230 |     expect(count).toBe(2000);
-          |                   ^
-      231 |     console.log(`✅ TC-TICKET-016 PASSED — 2000-char description accepted, counter: ${charCount}`);
-      232 |   });
-      233 |
-        at D:\Claude\QA_Projects\CustomerConnect\tests\createTicket.spec.js:230:19
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-c442b--2000-chars-max-is-accepted-chromium\test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-c442b--2000-chars-max-is-accepted-chromium\video.webm
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: reports\screenshots\createTicket-Create-Ticket-c442b--2000-chars-max-is-accepted-chromium\error-context.md
-
-    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
-
-    Error: expect(received).toBe(expected) // Object.is equality
-
-    Expected: 2000
-    Received: 0
-
-      228 |     const charCount = await ticketPage.getCharCount();
-      229 |     const count = parseInt(charCount.split(' / ')[0]);
-    > 230 |     expect(count).toBe(2000);
-          |                   ^
-      231 |     console.log(`✅ TC-TICKET-016 PASSED — 2000-char description accepted, counter: ${charCount}`);
-      232 |   });
-      233 |
-        at D:\Claude\QA_Projects\CustomerConnect\tests\createTicket.spec.js:230:19
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-c442b--2000-chars-max-is-accepted-chromium-retry1\test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-c442b--2000-chars-max-is-accepted-chromium-retry1\video.webm
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: reports\screenshots\createTicket-Create-Ticket-c442b--2000-chars-max-is-accepted-chromium-retry1\error-context.md
-
-    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
-    reports\screenshots\createTicket-Create-Ticket-c442b--2000-chars-max-is-accepted-chromium-retry1\trace.zip
-    Usage:
-
-        npx playwright show-trace reports\screenshots\createTicket-Create-Ticket-c442b--2000-chars-max-is-accepted-chromium-retry1\trace.zip
-
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-  5 failed
-    [chromium] › tests\createTicket.spec.js:75:3 › Create Ticket Module — E2E Tests › TC-TICKET-005 | All Ticket Type chips are visible 
-    [chromium] › tests\createTicket.spec.js:84:3 › Create Ticket Module — E2E Tests › TC-TICKET-006 | Description character counter updates on input 
-    [chromium] › tests\createTicket.spec.js:96:3 › Create Ticket Module — E2E Tests › TC-TICKET-007 | Reset button clears all filled fields 
-    [chromium] › tests\createTicket.spec.js:195:3 › Create Ticket Module — E2E Tests › TC-TICKET-014 | Description with exactly 14 chars fails validation 
-    [chromium] › tests\createTicket.spec.js:224:3 › Create Ticket Module — E2E Tests › TC-TICKET-016 | Description at 2000 chars (max) is accepted 
-  15 passed (7.2m)
+  20 passed (5.0m)
+RUN_COMPLETE 

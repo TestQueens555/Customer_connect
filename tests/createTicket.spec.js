@@ -43,7 +43,7 @@ test.describe('Create Ticket Module — E2E Tests', () => {
     await ticketPage.fillValidTicket(ticketData.validTicket);
     // -- Step 2: Submit the ticket --
     await ticketPage.clickSubmit();
-    // -- Step 3: Verify no validation error popup appears (or success shown) --
+    // -- Step 3: Verify no validation error popup appears --
     const swalTitle = await ticketPage.getSwalTitle();
     expect(swalTitle).not.toMatch(/Missing Information/i);
     console.log('✅ TC-TICKET-002 PASSED — Ticket submitted without missing information errors');
@@ -61,50 +61,60 @@ test.describe('Create Ticket Module — E2E Tests', () => {
   });
 
   test('TC-TICKET-004 | Selecting project unlocks Platform dropdown', async ({ page }) => {
-    // -- Step 1: Verify platform locked before project selection --
-    const lockedBefore = await ticketPage.isPlatformLocked();
-    expect(lockedBefore).toBeTruthy();
+    // -- Step 1: Verify platform chips are empty before project selected --
+    const chipsBefore = await page.locator('#platformChips .ct-type-chip').count();
+    expect(chipsBefore).toBe(0);
     // -- Step 2: Select a project --
     await ticketPage.selectProject(ticketData.validTicket.project);
-    // -- Step 3: Verify platform dropdown now active --
-    const lockedAfter = await ticketPage.isPlatformLocked();
-    expect(lockedAfter).toBeFalsy();
+    // -- Step 3: Verify platform chips are now populated --
+    await page.waitForSelector('#platformChips .ct-type-chip', { timeout: 8000 });
+    const chipsAfter = await page.locator('#platformChips .ct-type-chip').count();
+    expect(chipsAfter).toBeGreaterThan(0);
     console.log('✅ TC-TICKET-004 PASSED — Platform unlocked after project selection');
   });
 
   test('TC-TICKET-005 | All Ticket Type chips are visible', async ({ page }) => {
-    // -- Step 1: Check each chip type exists --
+    // -- Step 1: Check each chip exists inside #typeChips (scoped — avoids hidden step labels) --
     for (const type of ticketData.ticketTypes) {
-      const chip = page.locator('text=' + type).first();
-      await expect(chip).toBeVisible();
+      const chip = page.locator('#typeChips .ct-type-chip', { hasText: type });
+      await expect(chip.first()).toBeVisible();
     }
     console.log('✅ TC-TICKET-005 PASSED — All ticket type chips visible');
   });
 
   test('TC-TICKET-006 | Description character counter updates on input', async ({ page }) => {
-    // -- Step 1: Enter text in description --
+    // -- Step 1: Enter text in description using correct textarea ID --
     const sampleText = 'Testing character counter update';
-    await ticketPage.enterDescription(sampleText);
-    // -- Step 2: Verify counter shows non-zero --
-    const charCount = await ticketPage.getCharCount();
-    expect(charCount).not.toBe('0 / 2000');
+    await page.locator('#txtDescription').fill(sampleText);
+    await page.waitForTimeout(300);
+    // -- Step 2: Verify counter via #descCount element --
+    const charCount = await page.locator('#descCount').textContent();
+    expect(charCount.trim()).not.toBe('0 / 2000');
     const count = parseInt(charCount.split(' / ')[0]);
     expect(count).toBe(sampleText.length);
-    console.log(`✅ TC-TICKET-006 PASSED — Char counter shows: ${charCount}`);
+    console.log(`✅ TC-TICKET-006 PASSED — Char counter shows: ${charCount.trim()}`);
   });
 
   test('TC-TICKET-007 | Reset button clears all filled fields', async ({ page }) => {
-    // -- Step 1: Fill some fields --
-    await ticketPage.enterPageName('Test Page');
-    await ticketPage.enterDescription('Some description text here');
+    // -- Step 1: Fill page name and description --
+    await page.locator('#txtPageName').fill('Test Page');
+    await page.locator('#txtDescription').fill('Some description text here');
     // -- Step 2: Click Reset --
-    await ticketPage.clickReset();
+    await ticketPage.resetButton.click();
+    await page.waitForTimeout(600);
+    // -- Step 3: Confirm the SweetAlert Reset dialog --
+    await expect(ticketPage.swalPopup).toBeVisible();
+    const swalTitle = await ticketPage.getSwalTitle();
+    expect(swalTitle).toMatch(/Reset/i);
+    await page.locator('.swal2-confirm').click();
+    // -- Step 4: Wait for page to settle after reset --
+    await page.waitForLoadState('networkidle');
     await page.waitForTimeout(500);
-    // -- Step 3: Verify description is cleared --
-    const descValue = await ticketPage.descriptionInput.inputValue().catch(
-      () => ticketPage.descriptionInput.textContent()
-    );
-    expect(descValue?.trim()).toBe('');
+    // -- Step 5: Verify fields cleared --
+    const descValue  = await page.locator('#txtDescription').inputValue();
+    const pageValue  = await page.locator('#txtPageName').inputValue();
+    expect(descValue.trim()).toBe('');
+    expect(pageValue.trim()).toBe('');
     console.log('✅ TC-TICKET-007 PASSED — Reset clears form fields');
   });
 
@@ -117,7 +127,7 @@ test.describe('Create Ticket Module — E2E Tests', () => {
     // -- Step 2: Submit --
     await ticketPage.clickSubmit();
     // -- Step 3: No missing info popup for page name --
-    const swalContent = await ticketPage.getSwalContent();
+    const swalContent = await ticketPage.getSwalContent().catch(() => '');
     expect(swalContent).not.toMatch(/Page.*Screen Name/i);
     console.log('✅ TC-TICKET-008 PASSED — Page/Screen Name is optional');
   });
@@ -140,12 +150,11 @@ test.describe('Create Ticket Module — E2E Tests', () => {
     await ticketPage.enterDescription(ticketData.validTicket.description);
     // -- Step 2: Submit --
     await ticketPage.clickSubmit();
-    // -- Step 3: Check validation popup content --
+    // -- Step 3: Validation popup must be visible --
     await expect(ticketPage.swalPopup).toBeVisible();
-    const content = await ticketPage.getSwalContent();
-    // Platform is unlocked only after project — so both should be missing
-    expect(await ticketPage.isSwalVisible()).toBeTruthy();
-    console.log(`✅ TC-TICKET-010 PASSED — Validation shown, content: ${content.trim()}`);
+    const title = await ticketPage.getSwalTitle();
+    expect(title).toMatch(/Missing Information/i);
+    console.log(`✅ TC-TICKET-010 PASSED — Validation shown for missing Project`);
   });
 
   test('TC-TICKET-011 | Submit without Ticket Type shows validation error', async ({ page }) => {
@@ -197,14 +206,19 @@ test.describe('Create Ticket Module — E2E Tests', () => {
     await ticketPage.selectProject(ticketData.validTicket.project);
     await ticketPage.selectTicketType(ticketData.validTicket.type);
     await ticketPage.selectPlatform(ticketData.validTicket.platform);
-    await ticketPage.enterDescription(ticketData.boundary.descriptionMin14);
-    // -- Step 2: Submit --
+    await page.locator('#txtDescription').fill(ticketData.boundary.descriptionMin14);
+    await page.waitForTimeout(200);
+    // -- Step 2: Verify the test data is exactly 14 chars --
+    const charCount = await page.locator('#descCount').textContent();
+    const len = parseInt(charCount.split(' / ')[0]);
+    expect(len).toBeLessThan(15);
+    // -- Step 3: Submit --
     await ticketPage.clickSubmit();
-    // -- Step 3: Validation shown for short description --
+    // -- Step 4: Validation shown for short description --
     await expect(ticketPage.swalPopup).toBeVisible();
     const content = await ticketPage.getSwalContent();
     expect(content).toMatch(/Description/i);
-    console.log('✅ TC-TICKET-014 PASSED — 14-char description rejected');
+    console.log(`✅ TC-TICKET-014 PASSED — ${len}-char description rejected`);
   });
 
   test('TC-TICKET-015 | Description with exactly 15 chars passes validation', async ({ page }) => {
@@ -215,30 +229,31 @@ test.describe('Create Ticket Module — E2E Tests', () => {
     await ticketPage.enterDescription(ticketData.boundary.descriptionMin);
     // -- Step 2: Submit --
     await ticketPage.clickSubmit();
-    // -- Step 3: No description validation error --
-    const swalContent = await ticketPage.getSwalContent().catch(() => '');
-    expect(swalContent).not.toMatch(/min 15/i);
+    // -- Step 3: No description validation error (confirmation dialog appears) --
+    const swalTitle = await ticketPage.getSwalTitle();
+    expect(swalTitle).not.toMatch(/Missing Information/i);
     console.log('✅ TC-TICKET-015 PASSED — 15-char description accepted');
   });
 
   test('TC-TICKET-016 | Description at 2000 chars (max) is accepted', async ({ page }) => {
-    // -- Step 1: Enter 2000-char description --
-    await ticketPage.enterDescription(ticketData.boundary.descriptionMax);
-    // -- Step 2: Verify counter shows 2000 / 2000 --
-    const charCount = await ticketPage.getCharCount();
+    // -- Step 1: Enter 2000-char description using correct textarea ID --
+    await page.locator('#txtDescription').fill(ticketData.boundary.descriptionMax);
+    await page.waitForTimeout(300);
+    // -- Step 2: Verify counter via #descCount element --
+    const charCount = await page.locator('#descCount').textContent();
     const count = parseInt(charCount.split(' / ')[0]);
     expect(count).toBe(2000);
-    console.log(`✅ TC-TICKET-016 PASSED — 2000-char description accepted, counter: ${charCount}`);
+    console.log(`✅ TC-TICKET-016 PASSED — 2000-char description accepted, counter: ${charCount.trim()}`);
   });
 
   test('TC-TICKET-017 | Platform chips show all expected options after project selected', async ({ page }) => {
     // -- Step 1: Select a project first --
     await ticketPage.selectProject(ticketData.validTicket.project);
-    await page.waitForTimeout(500);
-    // -- Step 2: Verify platform chips are now visible --
+    // -- Step 2: Wait for API and verify platform chips loaded --
+    await page.waitForSelector('#platformChips .ct-type-chip', { timeout: 8000 });
     for (const platform of ['Backend', 'General', 'Testing']) {
-      const chip = page.locator('text=' + platform).first();
-      await expect(chip).toBeVisible();
+      const chip = page.locator('#platformChips .ct-type-chip', { hasText: platform });
+      await expect(chip.first()).toBeVisible();
     }
     console.log('✅ TC-TICKET-017 PASSED — Platform chips visible after project selection');
   });
@@ -253,9 +268,10 @@ test.describe('Create Ticket Module — E2E Tests', () => {
     await ticketPage.enterDescription(ticketData.security.sqlInjection);
     // -- Step 2: Submit --
     await ticketPage.clickSubmit();
-    // -- Step 3: Page does not crash; stays on create ticket or shows controlled response --
+    // -- Step 3: Page does not crash --
     const title = await ticketPage.getTitle();
     expect(title.length).toBeGreaterThan(0);
+    expect(title).not.toMatch(/500|error/i);
     console.log(`✅ TC-TICKET-018 PASSED — SQL injection handled, page: ${title}`);
   });
 
@@ -267,14 +283,15 @@ test.describe('Create Ticket Module — E2E Tests', () => {
     await ticketPage.enterDescription(ticketData.security.xssPayload);
     // -- Step 2: Submit --
     await ticketPage.clickSubmit();
-    // -- Step 3: No XSS execution (no alert dialog) --
+    // -- Step 3: No XSS execution --
     const title = await ticketPage.getTitle();
     expect(title.length).toBeGreaterThan(0);
+    expect(title).not.toMatch(/500|error/i);
     console.log(`✅ TC-TICKET-019 PASSED — XSS payload handled safely`);
   });
 
   test('TC-TICKET-020 | Unauthenticated user is redirected to login page', async ({ page }) => {
-    // -- Step 1: Clear session (navigate away to logout or clear cookies) --
+    // -- Step 1: Clear session cookies --
     await page.context().clearCookies();
     // -- Step 2: Try to access create ticket directly --
     await page.goto('http://customerportal.dev-ts.online/Ticket/Create');

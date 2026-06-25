@@ -24,9 +24,9 @@ class CreateTicketPage extends BasePage {
     // ── Platform dropdown + chips ──────────────────────────────────────
     this.platformInput     = page.locator('input[placeholder="Select Platform..."]');
 
-    // ── Description textarea ───────────────────────────────────────────
-    this.descriptionInput  = page.locator('textarea.ct-control');
-    this.charCounter       = page.locator('text=/\\d+ \\/ 2000/');
+    // ── Description textarea (ID-based — avoids ambiguous CSS class match) ───
+    this.descriptionInput  = page.locator('#txtDescription');
+    this.charCounter       = page.locator('#descCount');
 
     // ── Attachment ─────────────────────────────────────────────────────
     this.fileInput         = page.locator('#fileInput');
@@ -124,7 +124,13 @@ class CreateTicketPage extends BasePage {
 
   async clickReset() {
     await this.resetButton.click();
-    await this.page.waitForTimeout(500);
+    await this.page.waitForTimeout(600);
+    // Confirm the SweetAlert "Reset Form?" dialog if it appears
+    const confirmBtn = this.swalConfirmBtn;
+    if (await confirmBtn.isVisible().catch(() => false)) {
+      await confirmBtn.click();
+      await this.page.waitForTimeout(600);
+    }
   }
 
   // ── Validation helpers ────────────────────────────────────────────────
@@ -160,10 +166,10 @@ class CreateTicketPage extends BasePage {
     await this.enterDescription(data.description);
   }
 
-  // ── Platform locked check ─────────────────────────────────────────────
+  // ── Platform locked check (true = no chips loaded yet) ───────────────
   async isPlatformLocked() {
-    const hint = await this.page.locator('text=Select a project first').isVisible().catch(() => false);
-    return hint;
+    const chipCount = await this.page.locator('#platformChips .ct-type-chip').count();
+    return chipCount === 0;
   }
 }
 
