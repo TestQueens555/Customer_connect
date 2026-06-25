@@ -1,0 +1,123 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Playwright E2E Tests — CustomerConnect QA
+#
+# REPOSITORY: https://github.com/TestQueens555/Customer_connect
+#
+# PURPOSE:
+#   Runs the full Playwright test suite against the live CustomerConnect portal
+#   on every push to main and on every pull request.
+#   Generates featurewise Excel reports and uploads them as downloadable artifacts.
+#
+# TRIGGERS:
+#   - push to main
+#   - pull_request targeting main
+#   - manual run from GitHub Actions UI (workflow_dispatch)
+#
+# NOTES:
+#   - Tests run against http://customerportal.dev-ts.online (live site)
+#   - Chromium only (as configured in playwright.config.js)
+#   - HTML report retained 30 days as downloadable artifact
+#   - Excel featurewise reports retained 30 days as downloadable artifact
+# ══════════════════════════════════════════════════════════════════════════════
+
+name: Playwright E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: playwright-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+
+  # ╔═══════════════════════════════════════════════════════════════════════════
+  # ║  Playwright Tests + Featurewise Report Generation
+  # ╚═══════════════════════════════════════════════════════════════════════════
+  playwright:
+    name: Run Playwright Tests & Generate Reports
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # ── Checkout ──────────────────────────────────────────────────────────────
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── Node.js setup ─────────────────────────────────────────────────────────
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      # ── Install dependencies ───────────────────────────────────────────────────
+      - name: Install dependencies
+        run: npm install
+
+      # ── Install Playwright browser ─────────────────────────────────────────────
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      # ── Run Login tests ────────────────────────────────────────────────────────
+      - name: Run Login tests
+        run: npx playwright test tests/login.spec.js --reporter=json,html,line
+        continue-on-error: true
+
+      # ── Generate Login featurewise Excel report ────────────────────────────────
+      - name: Generate Login Excel report
+        run: node utils/generate-report.js --feature=Login
+        continue-on-error: true
+
+      # ── Run all remaining tests (if more spec files exist) ─────────────────────
+      - name: Run all tests
+        run: npx playwright test --reporter=json,html,line
+        continue-on-error: true
+
+      # ── Save reference document ────────────────────────────────────────────────
+      - name: Save scripts reference document
+        run: node utils/save-reference.js
+        continue-on-error: true
+
+      # ── Upload Playwright HTML report ──────────────────────────────────────────
+      - name: Upload Playwright HTML report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-html-report-${{ github.run_id }}
+          path: reports/html-report/
+          retention-days: 30
+
+      # ── Upload featurewise Excel reports ──────────────────────────────────────
+      - name: Upload Featurewise Excel reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: featurewise-test-reports-${{ github.run_id }}
+          path: |
+            Featurewise Test Report/
+            reports/*.xlsx
+          retention-days: 30
+
+      # ── Test summary ───────────────────────────────────────────────────────────
+      - name: Write test summary
+        if: always()
+        run: |
+          echo "### 📊 CustomerConnect QA Test Run" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Repository** | [TestQueens555/Customer_connect](https://github.com/TestQueens555/Customer_connect) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch** | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Triggered by** | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **App URL** | http://customerportal.dev-ts.online |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📥 Download **featurewise-test-reports** artifact above to get Excel reports." >> $GITHUB_STEP_SUMMARY

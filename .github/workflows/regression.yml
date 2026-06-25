@@ -1,0 +1,182 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Regression — Scheduled & On-Demand
+#
+# REPOSITORY: https://github.com/TestQueens555/Customer_connect
+#
+# PURPOSE:
+#   Runs the full regression suite nightly and on demand.
+#   Updates featurewise Excel reports using --regression flag so history
+#   is preserved. Generates daily bug report. All reports uploaded as artifacts.
+#
+# SCHEDULE:
+#   Every night at 12:00 AM UTC  =  5:30 AM IST
+#
+# PIPELINE:
+#   pre-checks   → Reuses ci.yml (lint + smoke test gate)
+#   regression   → Full test run + Excel report generation + daily bug report
+#
+# ARTIFACTS (retained 60 days):
+#   featurewise-regression-reports-{run_id}   ← Featurewise Excel reports
+#   daily-bug-report-{run_id}                 ← Daily bug report Excel
+#   playwright-regression-html-{run_id}       ← HTML report
+# ══════════════════════════════════════════════════════════════════════════════
+
+name: Regression — Nightly & On-Demand
+
+on:
+  # Nightly at 12:00 AM UTC (5:30 AM IST)
+  schedule:
+    - cron: '0 0 * * *'
+
+  # Manual trigger with feature selector
+  workflow_dispatch:
+    inputs:
+      feature:
+        description: 'Feature to run regression for (leave blank for all)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - Login
+          - Dashboard
+          - Registration
+          - Profile
+
+concurrency:
+  group: regression-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+
+  # ╔═══════════════════════════════════════════════════════════════════════════
+  # ║  JOB 1 — PRE-CHECKS (reuses ci.yml as mandatory gate)
+  # ╚═══════════════════════════════════════════════════════════════════════════
+  pre-checks:
+    name: Pre-Regression CI Checks
+    uses: ./.github/workflows/ci.yml
+
+  # ╔═══════════════════════════════════════════════════════════════════════════
+  # ║  JOB 2 — FULL REGRESSION RUN
+  # ╚═══════════════════════════════════════════════════════════════════════════
+  regression:
+    name: Full Regression Run
+    runs-on: ubuntu-latest
+    needs: pre-checks
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      # ── Run full test suite ────────────────────────────────────────────────────
+      - name: Run full test suite
+        run: npx playwright test --reporter=json,html,line
+        continue-on-error: true
+
+      # ── Generate Login regression report ──────────────────────────────────────
+      - name: Generate Login regression Excel report
+        run: node utils/generate-report.js --feature=Login --regression
+        continue-on-error: true
+
+      # ── Generate Dashboard regression report if spec exists ───────────────────
+      - name: Generate Dashboard regression Excel report
+        run: |
+          if [ -f "tests/dashboard.spec.js" ]; then
+            node utils/generate-report.js --feature=Dashboard --regression
+          else
+            echo "dashboard.spec.js not found — skipping Dashboard report"
+          fi
+        continue-on-error: true
+
+      # ── Generate reports for any additional feature spec files ─────────────────
+      - name: Generate all remaining feature reports
+        run: |
+          for spec in tests/*.spec.js; do
+            feature=$(basename "$spec" .spec.js)
+            feature="$(tr '[:lower:]' '[:upper:]' <<< ${feature:0:1})${feature:1}"
+            if [ "$feature" != "Login" ] && [ "$feature" != "Dashboard" ]; then
+              echo "Generating report for: $feature"
+              node utils/generate-report.js --feature="$feature" --regression || true
+            fi
+          done
+        continue-on-error: true
+
+      # ── Generate daily bug report ──────────────────────────────────────────────
+      - name: Generate daily bug report
+        run: node utils/generate-daily-bug-report.js
+        continue-on-error: true
+
+      # ── Save reference document ────────────────────────────────────────────────
+      - name: Save scripts reference document
+        run: node utils/save-reference.js
+        continue-on-error: true
+
+      # ── Upload Playwright HTML report ──────────────────────────────────────────
+      - name: Upload Playwright HTML report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-regression-html-${{ github.run_id }}
+          path: reports/html-report/
+          retention-days: 60
+
+      # ── Upload featurewise Excel reports ──────────────────────────────────────
+      - name: Upload Featurewise Regression Excel reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: featurewise-regression-reports-${{ github.run_id }}
+          path: |
+            Featurewise Test Report/
+            reports/*.xlsx
+          retention-days: 60
+
+      # ── Upload daily bug report ────────────────────────────────────────────────
+      - name: Upload Daily Bug Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: daily-bug-report-${{ github.run_id }}
+          path: Daily Bug Report/
+          retention-days: 60
+
+      # ── Regression summary ─────────────────────────────────────────────────────
+      - name: Write regression summary
+        if: always()
+        run: |
+          echo "### 🔄 CustomerConnect QA — Regression Run" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Repository** | [TestQueens555/Customer_connect](https://github.com/TestQueens555/Customer_connect) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Run type** | ${{ github.event_name == 'schedule' && 'Nightly Scheduled' || 'Manual' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Feature** | ${{ github.event.inputs.feature || 'all' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Triggered by** | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **App URL** | http://customerportal.dev-ts.online |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📥 **featurewise-regression-reports** → Featurewise Excel reports" >> $GITHUB_STEP_SUMMARY
+          echo "📥 **daily-bug-report** → Today's bug report with tracker comparison" >> $GITHUB_STEP_SUMMARY
+
+      - name: Regression failure notice
+        if: failure()
+        run: |
+          echo "### ❌ Regression Run Failed" >> $GITHUB_STEP_SUMMARY
+          echo "Check the logs above to identify failures." >> $GITHUB_STEP_SUMMARY
+          echo "Download the Excel artifact to review FAIL/BUG entries." >> $GITHUB_STEP_SUMMARY

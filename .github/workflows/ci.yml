@@ -1,0 +1,148 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# CI — Pull Request Checks
+#
+# REPOSITORY: https://github.com/TestQueens555/Customer_connect
+#
+# PURPOSE:
+#   Validates every pull request targeting main before it can be merged.
+#   Checks Node.js setup, dependency install, file structure, JS syntax,
+#   and runs a quick smoke login test.
+#   Also callable as a reusable workflow by regression.yml (workflow_call).
+#
+# JOBS:
+#   lint-check   — Validates project structure, config files, JS syntax
+#   smoke-test   — Installs Playwright and runs TC-LOGIN-001 as smoke test
+# ══════════════════════════════════════════════════════════════════════════════
+
+name: CI — Pull Request Checks
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+  workflow_call:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+
+  # ╔═══════════════════════════════════════════════════════════════════════════
+  # ║  JOB 1 — LINT & STRUCTURE CHECK
+  # ╚═══════════════════════════════════════════════════════════════════════════
+  lint-check:
+    name: Lint & Structure Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      # ── Validate required files exist ──────────────────────────────────────────
+      - name: Validate required files exist
+        run: |
+          echo "Checking required project files..."
+          files=(
+            "playwright.config.js"
+            "package.json"
+            "utils/config.js"
+            "utils/generate-report.js"
+            "utils/save-reference.js"
+            "pages/BasePage.js"
+            "pages/LoginPage.js"
+            "pages/DashboardPage.js"
+            "tests/login.spec.js"
+            "test-data/loginData.js"
+            "test-data/dashboardData.js"
+            "references/SKILL.md"
+          )
+          for f in "${files[@]}"; do
+            if [ -f "$f" ]; then
+              echo "  ✓ $f"
+            else
+              echo "  ✗ MISSING: $f"
+              exit 1
+            fi
+          done
+          echo "All required files present."
+
+      # ── Validate npm scripts ───────────────────────────────────────────────────
+      - name: Validate npm scripts exist
+        run: |
+          echo "Checking required npm scripts..."
+          scripts=("test:login" "test:dashboard" "test:all" "run:login" "run:dashboard" "regression:login" "regression:dashboard" "save-reference" "bug-report:daily")
+          for s in "${scripts[@]}"; do
+            if node -e "const p=require('./package.json'); if(!p.scripts['$s']) process.exit(1)"; then
+              echo "  ✓ npm run $s"
+            else
+              echo "  ✗ MISSING script: $s"
+              exit 1
+            fi
+          done
+          echo "All required scripts present."
+
+      # ── JS syntax check ────────────────────────────────────────────────────────
+      - name: JavaScript syntax check
+        run: |
+          echo "Checking JS files for syntax errors..."
+          node --check playwright.config.js
+          node --check utils/config.js
+          node --check utils/generate-report.js
+          node --check utils/save-reference.js
+          node --check pages/BasePage.js
+          node --check pages/LoginPage.js
+          node --check pages/DashboardPage.js
+          node --check tests/login.spec.js
+          node --check test-data/loginData.js
+          node --check test-data/dashboardData.js
+          echo "✓ All files pass syntax check"
+
+  # ╔═══════════════════════════════════════════════════════════════════════════
+  # ║  JOB 2 — SMOKE TEST (TC-LOGIN-001 only)
+  # ╚═══════════════════════════════════════════════════════════════════════════
+  smoke-test:
+    name: Smoke Test — TC-LOGIN-001
+    runs-on: ubuntu-latest
+    needs: lint-check
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Run smoke test — TC-LOGIN-001
+        run: npx playwright test -g "TC-LOGIN-001" --reporter=line
+        continue-on-error: true
+
+      - name: Upload smoke test report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-test-report-${{ github.run_id }}
+          path: reports/
+          retention-days: 7
