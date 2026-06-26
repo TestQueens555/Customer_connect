@@ -244,7 +244,7 @@ When adding a new page/feature to the automation:
 4. [ ] Add npm scripts to `package.json`:
        - test:[feature], report:[feature], run:[feature], regression:[feature]
 5. [ ] Run: `npm run run:[feature]`
-6. [ ] Verify Excel saved to `Featurewise Test Report\[Feature].xlsx`
+6. [ ] Verify Excel saved to `Test Execution Report\Feature Reports\[Feature].xlsx`
 
 ---
 

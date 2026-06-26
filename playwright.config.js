@@ -2,10 +2,20 @@ const { defineConfig, devices } = require('@playwright/test');
 
 module.exports = defineConfig({
   testDir:      './tests',
-  timeout:       30000,
+  timeout:       60000,   // increased from 30s — Dashboard sidebar/filter interactions need more time
   retries:       1,
   fullyParallel: false,
   workers:       1,
+
+  use: {
+    baseURL:       'http://customerportal.dev-ts.online',
+    headless:       true,
+    screenshot:    'only-on-failure',
+    video:         'retain-on-failure',
+    trace:         'on-first-retry',
+    actionTimeout:  15000,  // max wait for any single click/fill/locator action
+    navigationTimeout: 30000,
+  },
 
   reporter: [
     ['list'],
@@ -48,14 +58,6 @@ module.exports = defineConfig({
     // ── JSON for scripting / CI ────────────────────────────────────────
     ['json', { outputFile: 'reports/test-results.json' }],
   ],
-
-  use: {
-    baseURL:     'http://customerportal.dev-ts.online',
-    headless:     true,
-    screenshot:  'only-on-failure',
-    video:       'retain-on-failure',
-    trace:       'on-first-retry',
-  },
 
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },

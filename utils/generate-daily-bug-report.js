@@ -28,26 +28,27 @@ const todayLabel = new Date().toLocaleDateString('en-GB', { day:'2-digit', month
 const fileSafe   = todayLabel.replace(/ /g, '-');
 const reportPath = path.join(OUTPUT_DIR, `BugReport_${fileSafe}.xlsx`);
 
-// ── Canonical 18-column header ────────────────────────────────────────────────
+// ── Canonical 19-column header (added Layer col) ─────────────────────────────
 const DAILY_HEADER = [
   'Date',                 // A
-  'Module',               // B
+  'Feature',              // B  (renamed from Module for consistency)
   'TC ID',                // C
   'Test Case Name',       // D
   'Test Type',            // E
-  'Priority',             // F
-  'Status',               // G
-  'Bug ID',               // H
-  'Bug Title',            // I
-  'Severity',             // J
-  'Bug Priority',         // K
-  'Environment',          // L
-  'Browser',              // M
-  'OS',                   // N
-  'Steps to Reproduce',   // O
-  'Expected Result',      // P
-  'Actual Result',        // Q
-  'Source Report',        // R
+  'Layer',                // F  ← Unit | API | Auto
+  'Priority',             // G
+  'Status',               // H
+  'Bug ID',               // I
+  'Bug Title',            // J
+  'Severity',             // K
+  'Bug Priority',         // L
+  'Environment',          // M
+  'Browser',              // N
+  'OS',                   // O
+  'Steps to Reproduce',   // P
+  'Expected Result',      // Q
+  'Actual Result',        // R
+  'Source Report',        // S
 ];
 
 function getSeverity(title) {
@@ -58,6 +59,17 @@ function getSeverity(title) {
 }
 function getPriority(s) {
   return { Critical:'P1', High:'P2', Medium:'P3', Low:'P3' }[s] || 'P3';
+}
+function getLayer(title) {
+  if (/empty|whitespace|masked|default|checkbox|toggle|type.*password|password.*type/i.test(title))
+    return 'Unit';
+  if (/redirect|page load|navigate|unauthenticated|visible|dashboard|tab|badge|search|profile/i.test(title))
+    return 'Auto';
+  return 'API';
+}
+// Strip ANSI escape codes from Playwright error messages
+function cleanError(msg) {
+  return (msg || '').replace(/\x1b\[[0-9;]*m/g, '').replace(/\s+/g, ' ').substring(0, 300).trim();
 }
 function getTestType(title) {
   if (/sql|xss|injection|unauthenticated|security/i.test(title)) return 'Security';
@@ -84,7 +96,7 @@ function extractFailedTests(raw) {
           failed.push({
             title:   spec.title,
             suite:   suite.title,
-            error:   r.error?.message?.replace(/\n/g,' ').substring(0,200) || 'Test failed',
+            error:   cleanError(r.error?.message || '') || 'Test failed',
           });
         }
       });
@@ -191,10 +203,11 @@ failedTests.forEach((t, i) => {
 
   newRows.push({
     'Date':               todayLabel,
-    'Module':             feature,
+    'Feature':            feature,
     'TC ID':              tcId,
     'Test Case Name':     t.title,
     'Test Type':          getTestType(t.title),
+    'Layer':              getLayer(t.title),
     'Priority':           sev,
     'Status':             'FAIL',
     'Bug ID':             bugId,
@@ -204,19 +217,19 @@ failedTests.forEach((t, i) => {
     'Environment':       'http://customerportal.dev-ts.online',
     'Browser':           'Chrome',
     'OS':                'Windows',
-    'Steps to Reproduce':'1. Navigate to feature page\n2. Execute test steps\n3. Observe failure',
-    'Expected Result':   'Test should pass successfully',
-    'Actual Result':      t.error || 'Test failed',
-    'Source Report':     `Test Execution Report\\Feature Reports\\${feature}.xlsx  |  Tracker: ${remarks}`,
+    'Steps to Reproduce':`See spec: tests/${feature.toLowerCase()}.spec.js  TC: ${tcId}`,
+    'Expected Result':   'All Playwright assertions pass',
+    'Actual Result':      t.error || 'Playwright test failed',
+    'Source Report':     `Test Execution Report\\Feature Reports\\${feature}.xlsx`,
   });
 });
 
 const allRows = [...existingRows, ...newRows];
 const sheet   = XLSX.utils.json_to_sheet(allRows.length ? allRows : [{}], { header: DAILY_HEADER });
 sheet['!cols'] = [
-  {wch:14},{wch:16},{wch:18},{wch:44},{wch:12},{wch:10},{wch:12},
-  {wch:20},{wch:44},{wch:10},{wch:12},{wch:36},{wch:10},{wch:10},
-  {wch:40},{wch:32},{wch:44},{wch:36},
+  {wch:13},{wch:14},{wch:22},{wch:44},{wch:11},{wch:10},{wch:10},{wch:8},
+  {wch:20},{wch:46},{wch:10},{wch:10},{wch:36},{wch:9},{wch:9},
+  {wch:44},{wch:36},{wch:50},{wch:40},
 ];
 
 if (wb.SheetNames.includes('Daily Bug Report')) {
