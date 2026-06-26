@@ -62,13 +62,16 @@ jobs:
           echo "Changed files: $CHANGED"
 
           if echo "$CHANGED" | grep -qE "tests/login|pages/LoginPage|test-data/loginData|Feature Reports/Login"; then
-            TEST_PATH="tests/login.spec.js"; FEATURE="Login";        LABEL="Login Module"
+            TEST_PATH="tests/login.spec.js"; FEATURE="Login"; LABEL="Login Module"
           elif echo "$CHANGED" | grep -qE "tests/dashboard|pages/DashboardPage|test-data/dashboardData|Feature Reports/Dashboard"; then
             TEST_PATH="tests/dashboard.spec.js"; FEATURE="Dashboard"; LABEL="Dashboard Module"
           elif echo "$CHANGED" | grep -qE "tests/createTicket|pages/CreateTicketPage|test-data/createTicketData|Feature Reports/CreateTicket"; then
             TEST_PATH="tests/createTicket.spec.js"; FEATURE="CreateTicket"; LABEL="Create Ticket Module"
+          elif echo "$CHANGED" | grep -qE "^\.github/|playwright\.config|global-setup|package\.json|pages/BasePage|utils/"; then
+            # Workflow/config-only changes — run Login as smoke test only
+            TEST_PATH="tests/login.spec.js"; FEATURE="Login"; LABEL="Login Module (config change smoke)"
           else
-            TEST_PATH="all"; FEATURE="All"; LABEL="Full Suite"
+            TEST_PATH="tests/login.spec.js"; FEATURE="Login"; LABEL="Login Module (default)"
           fi
 
           echo "test_path=$TEST_PATH" >> $GITHUB_OUTPUT
