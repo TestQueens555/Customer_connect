@@ -19,7 +19,8 @@ module.exports = {
 
   ticketTypes: ['New', 'Improvement', 'System Issue', 'Operational Issue', 'SCR', 'Not Feasible'],
 
-  platforms: ['Backend', 'SFA Web Service', 'Android', 'Web Service', 'Integration', 'General', 'Testing'],
+  // Live platform chips confirmed from UI: Flutter replaces Android/SFA Web Service
+  platforms: ['Backend', 'Flutter', 'Web Service', 'Integration', 'General', 'Testing'],
 
   projects: ['PRJ0008 - YSG Inventory', 'PRJ0021 - YSG Loyalty', 'YSGINV-P1 - YSG Inventory Project'],
 
@@ -37,6 +38,12 @@ module.exports = {
     sqlInjection:   "' OR 1=1 --; DROP TABLE tickets;",
     xssPayload:     '<script>alert("xss")</script>',
     htmlInjection:  '<img src=x onerror=alert(1)>',
+  },
+
+  // File upload — screenshot from local machine for attachment TC
+  fileUpload: {
+    validImageFile: 'C:\\Users\\Turbosoft PC\\OneDrive\\Pictures\\Screenshots 1\\Screenshot 2026-06-26 091258.png',
+    invalidFile:    'C:\\Users\\Turbosoft PC\\OneDrive\\Pictures\\Screenshots 1\\ViewAllTicket_20260621.xlsx',
   },
 
 };

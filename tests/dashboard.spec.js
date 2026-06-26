@@ -12,7 +12,7 @@ test.describe('Dashboard Module', () => {
     const loginPage = new LoginPage(page);
     dashPage = new DashboardPage(page);
     await page.goto(`${config.baseURL}/Account/Logout`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await loginPage.navigate(config.loginURL);
     await loginPage.login(loginData.validUser.username, loginData.validUser.password);
     await expect(page).not.toHaveURL(/Login/);
@@ -205,11 +205,11 @@ test.describe('Dashboard Module', () => {
     async ({ page }) => {
       await test.step('Logout', async () => {
         await page.goto(`${config.baseURL}/Account/Logout`);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
       });
       await test.step('Directly navigate to dashboard', async () => {
         await page.goto(`${config.baseURL}/`);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
       });
       await test.step('Verify redirected to login page', async () => {
         await expect(page).toHaveURL(/Login/);

@@ -168,7 +168,7 @@ test.describe('Login Module', () => {
     async ({ page }) => {
       await page.context().clearCookies();
       await page.goto('http://customerportal.dev-ts.online/');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       await page.waitForTimeout(500);
       await expect(page).toHaveURL(/Login/);
     });

@@ -8,6 +8,9 @@ reports/screenshots/
 reports/html-report/
 reports/monocart/
 reports/test-results.json
+reports/auth-session.json
+reports/runner.log
+reports/pw-*.txt
 !reports/.gitkeep
 test-results/
 reports/*.txt

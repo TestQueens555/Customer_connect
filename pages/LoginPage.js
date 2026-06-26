@@ -13,7 +13,9 @@ class LoginPage extends BasePage {
     this.errorMessage  = page.locator('span.text-sm.font-medium');
   }
 
-  async navigate(url)            { await this.page.goto(url); await this.page.waitForLoadState('networkidle'); }
+  async navigate(url) {
+    await this.page.goto(url, { waitUntil: 'domcontentloaded' });
+  }
   async enterUsername(username)  { await this.usernameInput.fill(username); }
   async enterPassword(password)  { await this.passwordInput.fill(password); }
   async checkRememberMe()        { await this.rememberMe.check(); }
