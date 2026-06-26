@@ -1,5 +1,8 @@
 node_modules/
 
+# ── IDE / Editor settings (personal, not committed) ──────────────────────
+.vscode/
+
 # ── Playwright / Automation report output (auto-generated, not committed) ──
 reports/screenshots/
 reports/html-report/
@@ -7,11 +10,11 @@ reports/monocart/
 reports/test-results.json
 !reports/.gitkeep
 test-results/
+reports/*.txt
 
-# ── Allure (auto-generated, not committed) ────────────────────────────────
-allure-results/*
+# ── Allure (abandoned — replaced by Monocart) ────────────────────────────
+allure-results/
 allure-report/
-!allure-results/.gitkeep
 
 # ── Test Execution Reports (COMMITTED TO GIT) ─────────────────────────────
 # Feature Reports and Daily Reports Excel files ARE tracked — do NOT ignore
