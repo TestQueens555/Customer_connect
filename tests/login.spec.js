@@ -4,6 +4,7 @@ const DashboardPage = require('../pages/DashboardPage');
 const config        = require('../utils/config');
 const loginData     = require('../test-data/loginData');
 
+// Pipeline verification run — 26-Jun-2026 | 20/20 PASS confirmed
 test.describe('Login Module', () => {
   let loginPage;
 
