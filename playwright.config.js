@@ -1,10 +1,15 @@
 const { defineConfig, devices } = require('@playwright/test');
+const path = require('path');
+const fs   = require('fs');
+
+const authFile = path.join(__dirname, 'reports/auth-session.json');
+const storageState = fs.existsSync(authFile) ? authFile : undefined;
 
 module.exports = defineConfig({
   testDir:      './tests',
   globalSetup:  './global-setup.js',
   timeout:       60000,
-  retries:       0,          // no retries — fail fast, fix fast
+  retries:       0,
   fullyParallel: false,
   workers:       1,
 
@@ -16,14 +21,12 @@ module.exports = defineConfig({
     trace:             'on-first-retry',
     actionTimeout:      15000,
     navigationTimeout:  30000,
-    storageState:      './reports/auth-session.json',
+    ...(storageState && { storageState }),
   },
 
   reporter: [
     ['list'],
-    // JSON only — used by generate-report.js
     ['json', { outputFile: 'reports/test-results.json' }],
-    // HTML report — lightweight, opens with npx playwright show-report
     ['html', { outputFolder: 'reports/html-report', open: 'never' }],
   ],
 

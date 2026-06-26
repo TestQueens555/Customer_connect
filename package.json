@@ -2,60 +2,36 @@
   "name": "customer_connect",
   "version": "1.0.0",
   "description": "E2E Automation Suite — Customer Portal QA",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/TestQueens555/Customer_connect.git"
-  },
+  "repository": { "type": "git", "url": "git+https://github.com/TestQueens555/Customer_connect.git" },
   "scripts": {
-
-    "// ── RUN BY FEATURE ───────────────────────────────────────────────": "",
-    "test:login":          "npx playwright test tests/login.spec.js",
-    "test:dashboard":      "npx playwright test tests/dashboard.spec.js",
-    "test:createticket":   "npx playwright test tests/createTicket.spec.js",
-    "test:all":            "npx playwright test",
-
-    "// ── RUN HEADED ───────────────────────────────────────────────────": "",
-    "test:login:headed":         "npx playwright test tests/login.spec.js --headed",
-    "test:dashboard:headed":     "npx playwright test tests/dashboard.spec.js --headed",
-    "test:createticket:headed":  "npx playwright test tests/createTicket.spec.js --headed",
-
-    "// ── RUN BY TAG ───────────────────────────────────────────────────": "",
-    "test:smoke":          "npx playwright test --grep @smoke",
-    "test:regression":     "npx playwright test --grep @regression",
-    "test:security":       "npx playwright test --grep @security",
-    "test:critical":       "npx playwright test --grep @critical",
-    "test:negative":       "npx playwright test --grep @negative",
-
-    "// ── GENERATE FEATURE EXCEL REPORTS ─────────────────────────────": "",
-    "report:login":        "node utils/generate-report.js --feature=Login",
-    "report:dashboard":    "node utils/generate-report.js --feature=Dashboard",
-    "report:createticket": "node utils/generate-report.js --feature=CreateTicket",
-
-    "// ── GENERATE DAILY BUG REPORTS ──────────────────────────────────": "",
-    "bug-report:daily":    "node utils/generate-daily-bug-report.js",
-
-    "// ── FULL PIPELINE PER FEATURE ───────────────────────────────────": "",
-    "run:login":           "npx playwright test tests/login.spec.js && node utils/generate-report.js --feature=Login",
-    "run:dashboard":       "npx playwright test tests/dashboard.spec.js && node utils/generate-report.js --feature=Dashboard",
-    "run:createticket":    "npx playwright test tests/createTicket.spec.js && node utils/generate-report.js --feature=CreateTicket",
-    "run:all":             "npx playwright test && node utils/generate-report.js --feature=All",
-
-    "// ── REGRESSION ───────────────────────────────────────────────────": "",
-    "regression:login":        "npm run test:login && node utils/generate-report.js --feature=Login --regression",
-    "regression:dashboard":    "npm run test:dashboard && node utils/generate-report.js --feature=Dashboard --regression",
-    "regression:createticket": "npm run test:createticket && node utils/generate-report.js --feature=CreateTicket --regression",
-    "regression:all":          "npm run test:all && npm run bug-report:daily",
-
-    "// ── UTILITIES ────────────────────────────────────────────────────": "",
-    "save-reference":      "node utils/save-reference.js",
-    "init-reports":        "node utils/init-reports.js",
-    "report:open":         "npx playwright show-report reports/html-report"
+    "test:login":               "npx playwright test tests/login.spec.js --config playwright.config.js",
+    "test:dashboard":           "npx playwright test tests/dashboard.spec.js --config playwright.config.js",
+    "test:createticket":        "npx playwright test tests/createTicket.spec.js --config playwright.config.js",
+    "test:all":                 "npx playwright test --config playwright.config.js",
+    "test:login:headed":        "npx playwright test tests/login.spec.js --config playwright.config.js --headed",
+    "test:dashboard:headed":    "npx playwright test tests/dashboard.spec.js --config playwright.config.js --headed",
+    "test:createticket:headed": "npx playwright test tests/createTicket.spec.js --config playwright.config.js --headed",
+    "test:smoke":               "npx playwright test --config playwright.config.js --grep @smoke",
+    "test:regression":          "npx playwright test --config playwright.config.js --grep @regression",
+    "test:security":            "npx playwright test --config playwright.config.js --grep @security",
+    "report:login":             "node utils/generate-report.js --feature=Login",
+    "report:dashboard":         "node utils/generate-report.js --feature=Dashboard",
+    "report:createticket":      "node utils/generate-report.js --feature=CreateTicket",
+    "bug-report:daily":         "node utils/generate-daily-bug-report.js",
+    "run:login":                "npx playwright test tests/login.spec.js --config playwright.config.js && node utils/generate-report.js --feature=Login",
+    "run:dashboard":            "npx playwright test tests/dashboard.spec.js --config playwright.config.js && node utils/generate-report.js --feature=Dashboard",
+    "run:createticket":         "npx playwright test tests/createTicket.spec.js --config playwright.config.js && node utils/generate-report.js --feature=CreateTicket",
+    "run:all":                  "npx playwright test --config playwright.config.js && node utils/generate-report.js --feature=All",
+    "regression:login":         "npx playwright test tests/login.spec.js --config playwright.config.js && node utils/generate-report.js --feature=Login --regression",
+    "regression:dashboard":     "npx playwright test tests/dashboard.spec.js --config playwright.config.js && node utils/generate-report.js --feature=Dashboard --regression",
+    "regression:createticket":  "npx playwright test tests/createTicket.spec.js --config playwright.config.js && node utils/generate-report.js --feature=CreateTicket --regression",
+    "save-reference":           "node utils/save-reference.js",
+    "init-reports":             "node utils/init-reports.js",
+    "report:open":              "npx playwright show-report reports/html-report"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
-    "allure-commandline": "^2.43.0",
-    "allure-playwright": "^3.10.1",
-    "monocart-reporter":  "^2.12.0",
-    "xlsx":               "^0.18.5"
+    "monocart-reporter": "^2.12.0",
+    "xlsx": "^0.18.5"
   }
 }
