@@ -35,10 +35,15 @@
     "bug-report:daily":    "node utils/generate-daily-bug-report.js",
 
     "// ── FULL PIPELINE PER FEATURE ───────────────────────────────────": "",
-    "run:login":           "npm run test:login && npm run report:login && npm run bug-report:daily",
-    "run:dashboard":       "npm run test:dashboard && npm run report:dashboard && npm run bug-report:daily",
-    "run:createticket":    "npm run test:createticket && npm run report:createticket && npm run bug-report:daily",
-    "run:all":             "npm run test:all && npm run bug-report:daily",
+    "run:login":           "npx playwright test tests/login.spec.js && node utils/generate-report.js --feature=Login",
+    "run:dashboard":       "npx playwright test tests/dashboard.spec.js && node utils/generate-report.js --feature=Dashboard",
+    "run:createticket":    "npx playwright test tests/createTicket.spec.js && node utils/generate-report.js --feature=CreateTicket",
+    "run:all":             "npx playwright test && node utils/generate-report.js --feature=All",
+
+    "// ── GIT PUSH AFTER RUN ──────────────────────────────────────────": "",
+    "push:login":          "git add -A && git commit -m \"test: Login Playwright run\" && git stash && git pull origin main --rebase && git stash pop && git push origin main",
+    "push:dashboard":      "git add -A && git commit -m \"test: Dashboard Playwright run\" && git stash && git pull origin main --rebase && git stash pop && git push origin main",
+    "push:createticket":   "git add -A && git commit -m \"test: CreateTicket Playwright run\" && git stash && git pull origin main --rebase && git stash pop && git push origin main",
 
     "// ── REGRESSION ───────────────────────────────────────────────────": "",
     "regression:login":        "npm run test:login && node utils/generate-report.js --feature=Login --regression",
