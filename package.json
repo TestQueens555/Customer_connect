@@ -40,11 +40,6 @@
     "run:createticket":    "npx playwright test tests/createTicket.spec.js && node utils/generate-report.js --feature=CreateTicket",
     "run:all":             "npx playwright test && node utils/generate-report.js --feature=All",
 
-    "// ── GIT PUSH AFTER RUN ──────────────────────────────────────────": "",
-    "push:login":          "git add -A && git commit -m \"test: Login Playwright run\" && git stash && git pull origin main --rebase && git stash pop && git push origin main",
-    "push:dashboard":      "git add -A && git commit -m \"test: Dashboard Playwright run\" && git stash && git pull origin main --rebase && git stash pop && git push origin main",
-    "push:createticket":   "git add -A && git commit -m \"test: CreateTicket Playwright run\" && git stash && git pull origin main --rebase && git stash pop && git push origin main",
-
     "// ── REGRESSION ───────────────────────────────────────────────────": "",
     "regression:login":        "npm run test:login && node utils/generate-report.js --feature=Login --regression",
     "regression:dashboard":    "npm run test:dashboard && node utils/generate-report.js --feature=Dashboard --regression",
