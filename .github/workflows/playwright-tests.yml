@@ -61,11 +61,11 @@ jobs:
           CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "all")
           echo "Changed files: $CHANGED"
 
-          if echo "$CHANGED" | grep -qE "tests/login|pages/LoginPage|test-data/loginData"; then
+          if echo "$CHANGED" | grep -qE "tests/login|pages/LoginPage|test-data/loginData|Feature Reports/Login"; then
             TEST_PATH="tests/login.spec.js"; FEATURE="Login";        LABEL="Login Module"
-          elif echo "$CHANGED" | grep -qE "tests/dashboard|pages/DashboardPage|test-data/dashboardData"; then
+          elif echo "$CHANGED" | grep -qE "tests/dashboard|pages/DashboardPage|test-data/dashboardData|Feature Reports/Dashboard"; then
             TEST_PATH="tests/dashboard.spec.js"; FEATURE="Dashboard"; LABEL="Dashboard Module"
-          elif echo "$CHANGED" | grep -qE "tests/createTicket|pages/CreateTicketPage|test-data/createTicketData"; then
+          elif echo "$CHANGED" | grep -qE "tests/createTicket|pages/CreateTicketPage|test-data/createTicketData|Feature Reports/CreateTicket"; then
             TEST_PATH="tests/createTicket.spec.js"; FEATURE="CreateTicket"; LABEL="Create Ticket Module"
           else
             TEST_PATH="all"; FEATURE="All"; LABEL="Full Suite"

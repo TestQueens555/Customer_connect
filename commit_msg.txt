@@ -1,1 +1,1 @@
-fix: pipeline gap audit - 10 issues resolved
+test: Login 20/20 PASS - Playwright auto-save report - fix CI scope detection
