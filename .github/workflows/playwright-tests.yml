@@ -80,8 +80,8 @@ jobs:
       - name: Create output directories
         run: |
           mkdir -p reports/monocart reports/html-report reports/screenshots
-          mkdir -p "Test Execution Report/Feature Reports"
-          mkdir -p "Test Execution Report/Daily Reports"
+          mkdir -p "Test Execution Report_Git/Feature Reports"
+          mkdir -p "Test Execution Report_Git/Daily Reports"
 
       # ── 7. Run Playwright tests ───────────────────────────────────────────
       - name: "Run — ${{ steps.scope.outputs.label }}"
@@ -94,21 +94,22 @@ jobs:
           fi
         continue-on-error: true   # always generate reports even if tests fail
 
-      # ── 8. Generate Feature Excel report ─────────────────────────────────
+      # ── 8. Generate Feature Excel report → Test Execution Report_Git ────────
       - name: Generate Feature Excel report
         if: always()
+        env:
+          REPORT_DIR: "Test Execution Report_Git"
         run: |
           FEATURE="${{ steps.scope.outputs.feature }}"
           if [ "$FEATURE" = "All" ]; then
             for spec in tests/*.spec.js; do
-              # Convert filename to PascalCase feature name
               fname=$(basename "$spec" .spec.js)
               FEAT="$(echo "${fname:0:1}" | tr '[:lower:]' '[:upper:]')${fname:1}"
               echo "→ Generating report for $FEAT"
-              node utils/generate-report.js --feature="$FEAT" || true
+              REPORT_DIR="Test Execution Report_Git" node utils/generate-report.js --feature="$FEAT" || true
             done
           else
-            node utils/generate-report.js --feature="$FEATURE"
+            REPORT_DIR="Test Execution Report_Git" node utils/generate-report.js --feature="$FEATURE"
           fi
 
       # ── 9. Generate Daily Bug report ──────────────────────────────────────
@@ -123,7 +124,7 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add "Test Execution Report/" || true
+          git add "Test Execution Report_Git/" || true
 
           if git diff --cached --quiet; then
             echo "No report changes — skipping commit"
@@ -207,8 +208,8 @@ jobs:
             echo "### 📁 Reports committed to repository"
             echo "| Path | File |"
             echo "|------|------|"
-            echo "| \`Test Execution Report/Feature Reports/\` | \`${{ steps.scope.outputs.feature }}.xlsx\` |"
-            echo "| \`Test Execution Report/Daily Reports/\` | \`BugReport_$(date +%d-%b-%Y).xlsx\` |"
+            echo "| \`Test Execution Report_Git/Feature Reports/\` | \`${{ steps.scope.outputs.feature }}.xlsx\` |"
+            echo "| \`Test Execution Report_Git/Daily Reports/\` | \`BugReport_$(date +%d-%b-%Y).xlsx\` |"
             echo ""
             echo "### 📥 Downloadable artifacts"
             echo "- \`monocart-report-run-${{ github.run_number }}\` — open \`index.html\`"

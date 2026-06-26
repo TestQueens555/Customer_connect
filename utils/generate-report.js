@@ -16,8 +16,8 @@ const featureArg   = args.find(a => a.startsWith('--feature='));
 const isRegression = args.includes('--regression');
 const feature      = featureArg ? featureArg.split('=')[1] : 'Login';
 
-const FEATURE_DIR  = path.join(__dirname, '../Test Execution Report/Feature Reports');
-const DAILY_DIR    = path.join(__dirname, '../Test Execution Report/Daily Reports');
+const FEATURE_DIR  = path.join(__dirname, `../${process.env.REPORT_DIR || 'Test Execution Report'}/Feature Reports`);
+const DAILY_DIR    = path.join(__dirname, `../${process.env.REPORT_DIR || 'Test Execution Report'}/Daily Reports`);
 const reportPath   = path.join(FEATURE_DIR, `${feature}.xlsx`);
 const resultsFile  = path.join(__dirname, '../reports/test-results.json');
 
