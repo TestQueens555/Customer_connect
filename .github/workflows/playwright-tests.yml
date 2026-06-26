@@ -86,13 +86,15 @@ jobs:
       # ── 7. Run Playwright tests ───────────────────────────────────────────
       - name: "Run — ${{ steps.scope.outputs.label }}"
         id: playwright
+        env:
+          CI: "true"
         run: |
           if [ "${{ steps.scope.outputs.test_path }}" = "all" ]; then
-            npx playwright test
+            npx playwright test --config playwright.config.js
           else
-            npx playwright test ${{ steps.scope.outputs.test_path }}
+            npx playwright test ${{ steps.scope.outputs.test_path }} --config playwright.config.js
           fi
-        continue-on-error: true   # always generate reports even if tests fail
+        continue-on-error: true
 
       # ── 8. Generate Feature Excel report → Test Execution Report_Git ────────
       - name: Generate Feature Excel report
