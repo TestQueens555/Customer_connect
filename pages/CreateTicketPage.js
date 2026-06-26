@@ -1,11 +1,12 @@
 const BasePage = require('./BasePage');
+const config   = require('../utils/config');
 
 class CreateTicketPage extends BasePage {
   constructor(page) {
     super(page);
 
     // ── URL ────────────────────────────────────────────────────────────
-    this.pageURL = 'http://customerportal.dev-ts.online/Ticket/Create';
+    this.pageURL = `${config.baseURL}/Ticket/Create`;
 
     // ── Section locators ───────────────────────────────────────────────
     this.pageHeading       = page.locator('h1, .page-title').first();
@@ -53,12 +54,10 @@ class CreateTicketPage extends BasePage {
   // ── Project selection ─────────────────────────────────────────────────
   async selectProject(projectName) {
     await this.projectInput.click();
-    await this.page.waitForTimeout(500);
     await this.projectInput.fill(projectName);
-    await this.page.waitForTimeout(500);
     await this.page.keyboard.press('ArrowDown');
     await this.page.keyboard.press('Enter');
-    await this.page.waitForTimeout(500);
+    await this.projectInput.waitFor({ state: 'visible' });
   }
 
   async getSelectedProject() {
@@ -73,37 +72,31 @@ class CreateTicketPage extends BasePage {
   // ── Ticket Type selection ─────────────────────────────────────────────
   async selectTicketType(typeName) {
     await this.typeInput.click();
-    await this.page.waitForTimeout(500);
     const item = this.page.locator('.dx-list-item', { hasText: typeName });
     await item.click({ force: true }).catch(async () => {
       await this.page.keyboard.press('ArrowDown');
       await this.page.keyboard.press('Enter');
     });
-    await this.page.waitForTimeout(300);
   }
 
   async clickTypeChip(typeName) {
     const chip = this.page.locator('[cursor=pointer]', { hasText: typeName }).first();
     await chip.click();
-    await this.page.waitForTimeout(300);
   }
 
   // ── Platform selection ────────────────────────────────────────────────
   async selectPlatform(platformName) {
     await this.platformInput.click();
-    await this.page.waitForTimeout(500);
     const item = this.page.locator('.dx-list-item', { hasText: platformName });
     await item.click({ force: true }).catch(async () => {
       await this.page.keyboard.press('ArrowDown');
       await this.page.keyboard.press('Enter');
     });
-    await this.page.waitForTimeout(300);
   }
 
   async clickPlatformChip(platformName) {
     const chip = this.page.locator('[cursor=pointer]', { hasText: platformName }).last();
     await chip.click();
-    await this.page.waitForTimeout(300);
   }
 
   // ── Description ───────────────────────────────────────────────────────
@@ -119,17 +112,21 @@ class CreateTicketPage extends BasePage {
   // ── Submit / Reset ────────────────────────────────────────────────────
   async clickSubmit() {
     await this.submitButton.click();
-    await this.page.waitForTimeout(1000);
+    // Wait for either a SweetAlert popup or a page navigation
+    await Promise.race([
+      this.swalPopup.waitFor({ state: 'visible', timeout: 6000 }).catch(() => {}),
+      this.page.waitForLoadState('networkidle', { timeout: 6000 }).catch(() => {}),
+    ]);
   }
 
   async clickReset() {
     await this.resetButton.click();
-    await this.page.waitForTimeout(600);
+    await this.swalPopup.waitFor({ state: 'visible', timeout: 4000 }).catch(() => {});
     // Confirm the SweetAlert "Reset Form?" dialog if it appears
     const confirmBtn = this.swalConfirmBtn;
     if (await confirmBtn.isVisible().catch(() => false)) {
       await confirmBtn.click();
-      await this.page.waitForTimeout(600);
+      await this.page.waitForLoadState('networkidle').catch(() => {});
     }
   }
 

@@ -11,7 +11,7 @@ test.describe('Dashboard Module', () => {
   test.beforeEach(async ({ page }) => {
     const loginPage = new LoginPage(page);
     dashPage = new DashboardPage(page);
-    await page.goto('http://customerportal.dev-ts.online/Account/Logout');
+    await page.goto(`${config.baseURL}/Account/Logout`);
     await page.waitForLoadState('networkidle');
     await loginPage.navigate(config.loginURL);
     await loginPage.login(loginData.validUser.username, loginData.validUser.password);
@@ -29,7 +29,7 @@ test.describe('Dashboard Module', () => {
         expect(await dashPage.getPageHeading()).toContain('Support Dashboard');
       });
       await test.step('Verify URL is root', async () => {
-        await expect(page).toHaveURL('http://customerportal.dev-ts.online/');
+        await expect(page).toHaveURL(`${config.baseURL}/`);
       });
     });
 
@@ -89,7 +89,7 @@ test.describe('Dashboard Module', () => {
         expect(await dashPage.hasCrashed()).toBeFalsy();
       });
       await test.step('Verify still on dashboard', async () => {
-        await expect(page).toHaveURL('http://customerportal.dev-ts.online/');
+        await expect(page).toHaveURL(`${config.baseURL}/`);
       });
     });
 
@@ -204,11 +204,11 @@ test.describe('Dashboard Module', () => {
     { tag: ['@smoke', '@security'], annotation: [{ type: 'suite', description: 'Security' }, { type: 'severity', description: 'critical' }] },
     async ({ page }) => {
       await test.step('Logout', async () => {
-        await page.goto('http://customerportal.dev-ts.online/Account/Logout');
+        await page.goto(`${config.baseURL}/Account/Logout`);
         await page.waitForLoadState('networkidle');
       });
       await test.step('Directly navigate to dashboard', async () => {
-        await page.goto('http://customerportal.dev-ts.online/');
+        await page.goto(`${config.baseURL}/`);
         await page.waitForLoadState('networkidle');
       });
       await test.step('Verify redirected to login page', async () => {

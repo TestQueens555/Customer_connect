@@ -1,1 +1,1 @@
-chore: remove stale files and unused folders
+fix: pipeline gap audit - 8 issues resolved

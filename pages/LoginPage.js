@@ -17,12 +17,16 @@ class LoginPage extends BasePage {
   async enterUsername(username)  { await this.usernameInput.fill(username); }
   async enterPassword(password)  { await this.passwordInput.fill(password); }
   async checkRememberMe()        { await this.rememberMe.check(); }
-  async togglePasswordVisibility(){ await this.pwdToggle.click(); await this.page.waitForTimeout(300); }
+  async togglePasswordVisibility(){ await this.pwdToggle.click(); await this.passwordInput.waitFor({ state: 'visible' }); }
 
   async clickSignIn() {
     // Use JS click to avoid navigation timeout on slow responses (e.g. SQL payloads)
     await this.page.evaluate(() => document.querySelector('button[type="submit"]').click());
-    await this.page.waitForTimeout(4000);
+    // Wait for either navigation away from login page OR error message to appear
+    await Promise.race([
+      this.page.waitForURL(url => !url.includes('Login'), { timeout: 8000 }).catch(() => {}),
+      this.errorMessage.waitFor({ state: 'visible', timeout: 8000 }).catch(() => {}),
+    ]);
   }
 
   async login(username, password) {

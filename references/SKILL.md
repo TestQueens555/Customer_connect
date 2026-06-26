@@ -4,7 +4,7 @@
 This skill file is the single source of truth for all scripts, commands, suggestions, and
 run instructions for the CustomerConnect QA Automation project.
 Every time this skill is used, the reference document is also auto-saved as a .txt file
-into:  D:\Claude\QA_Projects\CustomerConnect\Featurewise Test Report\
+into:  D:\Claude\QA_Projects\CustomerConnect\Test Execution Report\Feature Reports\
 
 ---
 
@@ -39,15 +39,21 @@ D:\Claude\QA_Projects\CustomerConnect\
 │   └── [feature]Data.js          ← Separate data file per feature
 ├── utils\
 │   ├── config.js                 ← URLs, paths, credentials config
-│   ├── generate-report.js        ← Excel report generator script
+│   ├── generate-report.js        ← Feature Excel report generator
+│   ├── generate-daily-bug-report.js ← Daily Bug Report generator
+│   ├── init-reports.js           ← Creates blank Excel workbooks (run once)
 │   └── save-reference.js         ← Saves this reference doc to report folder
 ├── references\
 │   └── SKILL.md                  ← THIS FILE — scripts reference skill
 ├── reports\                      ← Playwright JSON + HTML output (auto-generated)
-├── Featurewise Test Report\      ← All Excel + reference docs saved here
-│   ├── Login.xlsx
-│   ├── Dashboard.xlsx
-│   └── QA_Scripts_Reference.txt  ← Auto-saved reference document
+├── Test Execution Report\        ← All Excel reports saved here
+│   ├── Feature Reports\
+│   │   ├── Login.xlsx
+│   │   ├── Dashboard.xlsx
+│   │   ├── CreateTicket.xlsx
+│   │   └── QA_Scripts_Reference.txt  ← Auto-saved reference document
+│   └── Daily Reports\
+│       └── BugReport_DD-Mon-YYYY.xlsx
 ├── playwright.config.js
 └── package.json
 ```
@@ -121,7 +127,7 @@ node utils/generate-report.js --feature=[FeatureName]
 ```
 
 > Report is saved to:
-> D:\Claude\QA_Projects\CustomerConnect\Featurewise Test Report\[Feature].xlsx
+> D:\Claude\QA_Projects\CustomerConnect\Test Execution Report\Feature Reports\[Feature].xlsx
 
 ---
 
@@ -169,9 +175,9 @@ npm run regression:all
 ## STEP 5 — View HTML Report in Browser
 
 ```bash
-npx playwright show-report
+npx playwright show-report reports/html-report
 # or
-npm run show-report
+npm run report:open
 ```
 
 ---
@@ -183,24 +189,32 @@ node utils/save-reference.js
 ```
 
 > Saves QA_Scripts_Reference.txt to:
-> D:\Claude\QA_Projects\CustomerConnect\Featurewise Test Report\
+> D:\Claude\QA_Projects\CustomerConnect\Test Execution Report\Feature Reports\
 
 ---
 
 ## All npm Scripts (package.json)
 
-| Script                  | Command                                      | What it does                          |
-|------------------------|----------------------------------------------|---------------------------------------|
-| test:login             | npm run test:login                           | Run login spec only                   |
-| test:all               | npm run test:all                             | Run all specs                         |
-| report:login           | npm run report:login                         | Generate Login.xlsx report            |
-| report:dashboard       | npm run report:dashboard                     | Generate Dashboard.xlsx report        |
-| run:login              | npm run run:login                            | Test + report for Login               |
-| run:dashboard          | npm run run:dashboard                        | Test + report for Dashboard           |
-| regression:login       | npm run regression:login                     | Regression run + update Login.xlsx    |
-| regression:dashboard   | npm run regression:dashboard                 | Regression run + update Dashboard.xlsx|
-| regression:all         | npm run regression:all                       | Full regression all features          |
-| show-report            | npm run show-report                          | Open HTML report in browser           |
+| Script                     | Command                              | What it does                               |
+|---------------------------|--------------------------------------|--------------------------------------------|
+| test:login                | npm run test:login                   | Run login spec only                        |
+| test:dashboard            | npm run test:dashboard               | Run dashboard spec only                    |
+| test:createticket         | npm run test:createticket            | Run create ticket spec only                |
+| test:all                  | npm run test:all                     | Run all specs                              |
+| report:login              | npm run report:login                 | Generate Login.xlsx feature report         |
+| report:dashboard          | npm run report:dashboard             | Generate Dashboard.xlsx feature report     |
+| report:createticket       | npm run report:createticket          | Generate CreateTicket.xlsx feature report  |
+| bug-report:daily          | npm run bug-report:daily             | Generate daily bug report Excel            |
+| run:login                 | npm run run:login                    | Test + feature report + daily report       |
+| run:dashboard             | npm run run:dashboard                | Test + feature report + daily report       |
+| run:createticket          | npm run run:createticket             | Test + feature report + daily report       |
+| regression:login          | npm run regression:login             | Regression run + update Login.xlsx         |
+| regression:dashboard      | npm run regression:dashboard         | Regression run + update Dashboard.xlsx     |
+| regression:createticket   | npm run regression:createticket      | Regression run + update CreateTicket.xlsx  |
+| regression:all            | npm run regression:all               | Full regression all features               |
+| init-reports              | npm run init-reports                 | Create blank Excel workbooks               |
+| save-reference            | npm run save-reference               | Save reference doc to Feature Reports\     |
+| report:open               | npm run report:open                  | Open Playwright HTML report in browser     |
 
 ---
 
@@ -262,9 +276,9 @@ BUG-[FEATURE]-[NUMBER]   →  BUG-LOGIN-001, BUG-DASHBOARD-002
 | Item         | Value                                      |
 |-------------|--------------------------------------------|
 | OS           | Windows                                    |
-| Node.js      | v18+                                       |
+| Node.js      | v22+                                       |
 | Playwright   | ^1.40.0                                    |
 | xlsx         | ^0.18.5                                    |
 | Browser      | Chromium (Desktop Chrome)                  |
-| Report Path  | D:\Claude\QA_Projects\CustomerConnect\Featurewise Test Report\ |
+| Report Path  | D:\Claude\QA_Projects\CustomerConnect\Test Execution Report\ |
 | Screenshot   | C:\Users\Turbosoft PC\OneDrive\Pictures\Screenshots 1\ |

@@ -48,11 +48,11 @@ class DashboardPage extends BasePage {
     this.myProfileLink       = page.locator('a[href="/Profile"]').first();
   }
 
-  async clickOverview()        { await this.overviewBtn.click(); await this.page.waitForTimeout(500); }
-  async clickAnalytics()       { await this.analyticsBtn.click(); await this.page.waitForTimeout(500); }
-  async clickDateRangeToggle() { await this.dateRangeToggle.click(); await this.page.waitForTimeout(500); }
+  async clickOverview()        { await this.overviewBtn.click(); await this.page.waitForLoadState('networkidle'); }
+  async clickAnalytics()       { await this.analyticsBtn.click(); await this.page.waitForLoadState('networkidle'); }
+  async clickDateRangeToggle() { await this.dateRangeToggle.click(); await this.dateFrom.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {}); }
   async clickViewAll()         { await this.viewAllLink.click(); await this.page.waitForLoadState('networkidle'); }
-  async clickUserProfile()     { await this.userProfileBtn.click(); await this.page.waitForTimeout(500); }
+  async clickUserProfile()     { await this.userProfileBtn.click(); await this.signOutLink.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {}); }
 
   async applyDateRange(from, to) {
     await this.clickDateRangeToggle();
@@ -64,7 +64,7 @@ class DashboardPage extends BasePage {
 
   async clickReset() {
     await this.resetBtn.click();
-    await this.page.waitForTimeout(500);
+    await this.page.waitForLoadState('networkidle');
   }
 
   async typeInSearch(text) { await this.searchBox.fill(text); }

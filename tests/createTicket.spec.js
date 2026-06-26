@@ -294,7 +294,7 @@ test.describe('Create Ticket Module — E2E Tests', () => {
     // -- Step 1: Clear session cookies --
     await page.context().clearCookies();
     // -- Step 2: Try to access create ticket directly --
-    await page.goto('http://customerportal.dev-ts.online/Ticket/Create');
+    await page.goto(`${config.baseURL}/Ticket/Create`);
     await page.waitForLoadState('networkidle');
     // -- Step 3: Verify redirect to login page --
     await expect(page).toHaveURL(/Login|Account/i);

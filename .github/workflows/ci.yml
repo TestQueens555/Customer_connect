@@ -30,7 +30,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '22'
 
 jobs:
 
@@ -63,7 +63,6 @@ jobs:
             "package.json"
             "utils/config.js"
             "utils/generate-report.js"
-            "utils/generate-daily-report.js"
             "utils/generate-daily-bug-report.js"
             "utils/save-reference.js"
             "pages/BasePage.js"
@@ -113,7 +112,6 @@ jobs:
           node --check playwright.config.js
           node --check utils/config.js
           node --check utils/generate-report.js
-          node --check utils/generate-daily-report.js
           node --check utils/generate-daily-bug-report.js
           node --check utils/save-reference.js
           node --check pages/BasePage.js
