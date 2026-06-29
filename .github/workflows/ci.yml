@@ -1,17 +1,5 @@
 # ══════════════════════════════════════════════════════════════════════════════
 # CI — Pull Request Checks
-#
-# REPOSITORY: https://github.com/TestQueens555/Customer_connect
-#
-# PURPOSE:
-#   Validates every pull request targeting main before it can be merged.
-#   Checks Node.js setup, dependency install, file structure, JS syntax,
-#   and runs a quick smoke login test.
-#   Also callable as a reusable workflow by regression.yml (workflow_call).
-#
-# JOBS:
-#   lint-check   — Validates project structure, config files, JS syntax
-#   smoke-test   — Installs Playwright and runs TC-LOGIN-001 as smoke test
 # ══════════════════════════════════════════════════════════════════════════════
 
 name: CI — Pull Request Checks
@@ -24,8 +12,6 @@ on:
   workflow_call:
 
 concurrency:
-  # Use run_id when called from another workflow so it never
-  # cancels a real PR check running at the same time
   group: ci-${{ github.event_name == 'workflow_call' && github.run_id || github.ref }}
   cancel-in-progress: true
 
@@ -34,9 +20,6 @@ env:
 
 jobs:
 
-  # ╔═══════════════════════════════════════════════════════════════════════════
-  # ║  JOB 1 — LINT & STRUCTURE CHECK
-  # ╚═══════════════════════════════════════════════════════════════════════════
   lint-check:
     name: Lint & Structure Check
     runs-on: ubuntu-latest
@@ -54,7 +37,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # ── Validate required files exist ──────────────────────────────────────────
       - name: Validate required files exist
         run: |
           echo "Checking required project files..."
@@ -69,12 +51,15 @@ jobs:
             "pages/LoginPage.js"
             "pages/DashboardPage.js"
             "pages/CreateTicketPage.js"
+            "pages/ActionQueuePage.js"
             "tests/login.spec.js"
             "tests/dashboard.spec.js"
             "tests/createTicket.spec.js"
+            "tests/actionQueue.spec.js"
             "test-data/loginData.js"
             "test-data/dashboardData.js"
             "test-data/createTicketData.js"
+            "test-data/actionQueueData.js"
             "references/SKILL.md"
           )
           for f in "${files[@]}"; do
@@ -87,13 +72,12 @@ jobs:
           done
           echo "All required files present."
 
-      # ── Validate npm scripts ───────────────────────────────────────────────────
       - name: Validate npm scripts exist
         run: |
           echo "Checking required npm scripts..."
-          scripts=("test:login" "test:dashboard" "test:createticket" "test:all"
-                   "run:login" "run:dashboard" "run:createticket"
-                   "regression:login" "regression:dashboard" "regression:createticket"
+          scripts=("test:login" "test:dashboard" "test:createticket" "test:actionqueue" "test:all"
+                   "run:login" "run:dashboard" "run:createticket" "run:actionqueue"
+                   "regression:login" "regression:dashboard" "regression:createticket" "regression:actionqueue"
                    "bug-report:daily" "save-reference" "init-reports" "report:open")
           for s in "${scripts[@]}"; do
             if node -e "const p=require('./package.json'); if(!p.scripts['$s']) process.exit(1)"; then
@@ -105,7 +89,6 @@ jobs:
           done
           echo "All required scripts present."
 
-      # ── JS syntax check ────────────────────────────────────────────────────────
       - name: JavaScript syntax check
         run: |
           echo "Checking JS files for syntax errors..."
@@ -118,17 +101,17 @@ jobs:
           node --check pages/LoginPage.js
           node --check pages/DashboardPage.js
           node --check pages/CreateTicketPage.js
+          node --check pages/ActionQueuePage.js
           node --check tests/login.spec.js
           node --check tests/dashboard.spec.js
           node --check tests/createTicket.spec.js
+          node --check tests/actionQueue.spec.js
           node --check test-data/loginData.js
           node --check test-data/dashboardData.js
           node --check test-data/createTicketData.js
+          node --check test-data/actionQueueData.js
           echo "✓ All files pass syntax check"
 
-  # ╔═══════════════════════════════════════════════════════════════════════════
-  # ║  JOB 2 — SMOKE TEST (TC-LOGIN-001 only)
-  # ╚═══════════════════════════════════════════════════════════════════════════
   smoke-test:
     name: Smoke Test — TC-LOGIN-001
     runs-on: ubuntu-latest
