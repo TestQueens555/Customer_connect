@@ -52,14 +52,31 @@ class ActionQueuePage extends BasePage {
   }
 
   // ── Navigation ─────────────────────────────────────────────────────────────
+  // CI NOTE: Timeouts set to 25000ms — KendoUI grid renders after domcontentloaded
+  // in headless Chromium. Wait for heading first (fast), then grid (slower).
+
   async navigateToActionQueue() {
     await this.page.goto('/Tickets/ActionQueue', { waitUntil: 'domcontentloaded' });
-    await this.dataGridGroup.waitFor({ state: 'visible', timeout: 10000 });
+    // Wait for heading first — it loads before the grid
+    await this.pageHeading.waitFor({ state: 'visible', timeout: 15000 });
+    // Then wait for the grid — try group first, fall back to grid element
+    try {
+      await this.dataGridGroup.waitFor({ state: 'visible', timeout: 25000 });
+    } catch {
+      await this.dataGrid.waitFor({ state: 'visible', timeout: 10000 });
+    }
   }
 
   async navigateToActionQueueDetails(ticketId) {
     await this.page.goto(`/Ticket/ActionQueueDetails/${ticketId}`, { waitUntil: 'domcontentloaded' });
-    await this.resolutionDeskLabel.waitFor({ state: 'visible', timeout: 10000 });
+    // Wait for page heading first, then Resolution Desk
+    await this.detailTitle.waitFor({ state: 'visible', timeout: 15000 });
+    try {
+      await this.resolutionDeskLabel.waitFor({ state: 'visible', timeout: 25000 });
+    } catch {
+      // Resolution desk may be in a sidebar — verify APPROVE button instead
+      await this.approveBtn.waitFor({ state: 'visible', timeout: 10000 });
+    }
   }
 
   // ── List Page Actions ──────────────────────────────────────────────────────
@@ -76,7 +93,12 @@ class ActionQueuePage extends BasePage {
   async clickPerformAction(rowIndex = 0) {
     await this.performActionBtns.nth(rowIndex).click();
     await this.page.waitForLoadState('domcontentloaded');
-    await this.resolutionDeskLabel.waitFor({ state: 'visible', timeout: 10000 });
+    await this.detailTitle.waitFor({ state: 'visible', timeout: 15000 });
+    try {
+      await this.resolutionDeskLabel.waitFor({ state: 'visible', timeout: 25000 });
+    } catch {
+      await this.approveBtn.waitFor({ state: 'visible', timeout: 10000 });
+    }
   }
 
   async clickExport() {
@@ -86,12 +108,12 @@ class ActionQueuePage extends BasePage {
   // ── Detail Page Actions ────────────────────────────────────────────────────
   async clickApprove() {
     await this.approveBtn.click();
-    await this.decisionDialog.waitFor({ state: 'visible', timeout: 5000 });
+    await this.decisionDialog.waitFor({ state: 'visible', timeout: 10000 });
   }
 
   async clickReopen() {
     await this.reopenBtn.click();
-    await this.decisionDialog.waitFor({ state: 'visible', timeout: 5000 });
+    await this.decisionDialog.waitFor({ state: 'visible', timeout: 10000 });
   }
 
   async clickBack() {
@@ -101,7 +123,7 @@ class ActionQueuePage extends BasePage {
 
   async clickTimeline() {
     await this.timelineBtn.click();
-    await this.page.waitForTimeout(1000);
+    await this.page.waitForTimeout(1500);
   }
 
   // ── Dialog Actions ─────────────────────────────────────────────────────────

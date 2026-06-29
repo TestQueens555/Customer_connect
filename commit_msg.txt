@@ -1,7 +1,8 @@
-fix: suppress XSS alert in CI - add addInitScript to dialog handler
+fix: increase CI timeouts in ActionQueuePage - grid renders slow in headless
 
-- Root cause: TC-AQ-025 XSS payload fires real JS alert in headless CI, blocking Playwright and producing empty test-results.json
-- Fix: loginAndGetPage helper now calls page.addInitScript to override window.alert/confirm/prompt before any page JS runs
-- Also adds page.on dialog handler as backup for any remaining dialogs
-- This allows all 26 TCs to complete in CI without hanging on the XSS dialog
-- BUG-AQ-001 (XSS) remains open - alert is suppressed for CI stability only
+Root cause: KendoUI grid and Resolution Desk render after domcontentloaded in CI headless Chromium, causing 10s timeout on [role="group"] and text=RESOLUTION DESK locators.
+
+Fix:
+- navigateToActionQueue: wait for heading first (15s), then grid group with 25s timeout + fallback to [role="grid"]
+- navigateToActionQueueDetails: wait for h1 first (15s), then RESOLUTION DESK with 25s timeout + fallback to APPROVE button
+- clickPerformAction: same pattern as navigateToActionQueueDetails
