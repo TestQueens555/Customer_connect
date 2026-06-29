@@ -1,8 +1,9 @@
-fix: increase CI timeouts in ActionQueuePage - grid renders slow in headless
+fix: increase login timeout to 20s for CI - waitForURL was timing out
 
-Root cause: KendoUI grid and Resolution Desk render after domcontentloaded in CI headless Chromium, causing 10s timeout on [role="group"] and text=RESOLUTION DESK locators.
+Root cause: clickSignIn waitForURL had 8s timeout which was insufficient in CI
+headless environment where server response is slower than local.
 
-Fix:
-- navigateToActionQueue: wait for heading first (15s), then grid group with 25s timeout + fallback to [role="grid"]
-- navigateToActionQueueDetails: wait for h1 first (15s), then RESOLUTION DESK with 25s timeout + fallback to APPROVE button
-- clickPerformAction: same pattern as navigateToActionQueueDetails
+Fix: increased waitForURL and errorMessage.waitFor from 8000ms to 20000ms
+Also added waitForLoadState after login redirect for extra stability.
+
+This affects all specs that use LoginPage.login() including actionQueue.spec.js.
