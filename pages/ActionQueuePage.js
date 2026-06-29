@@ -13,7 +13,6 @@ class ActionQueuePage extends BasePage {
     this.pendingBadge      = page.locator('text=7 Pending Actions');
     this.searchInput       = page.getByPlaceholder('Search actions...');
     this.exportButton      = page.getByRole('button', { name: /EXPORT/i });
-    this.dataGridGroup     = page.locator('[role="group"]');
     this.dataGrid          = page.locator('[role="grid"]');
     this.gridRows          = page.locator('[role="grid"] [role="row"]');
     this.performActionBtns = page.locator('[title="Perform Action"]');
@@ -50,17 +49,20 @@ class ActionQueuePage extends BasePage {
   }
 
   // ── Navigation ─────────────────────────────────────────────────────────────
-  // Strategy: navigate → wait 3s for async JS to settle → then interact
-  // Avoids relying on slow KendoUI grid role="group" in CI headless
-
   async navigateToActionQueue() {
     await this.page.goto('/Tickets/ActionQueue', { waitUntil: 'domcontentloaded' });
-    await this.page.waitForTimeout(3000);
+    // Wait for page heading — reliable signal the page loaded correctly after login
+    await this.pageHeading.waitFor({ state: 'visible', timeout: 30000 });
+    // Extra settle time for KendoUI grid to initialise
+    await this.page.waitForTimeout(2000);
   }
 
   async navigateToActionQueueDetails(ticketId) {
     await this.page.goto(`/Ticket/ActionQueueDetails/${ticketId}`, { waitUntil: 'domcontentloaded' });
-    await this.page.waitForTimeout(3000);
+    // Wait for ticket title heading
+    await this.detailTitle.waitFor({ state: 'visible', timeout: 30000 });
+    // Extra settle for Resolution Desk panel
+    await this.page.waitForTimeout(2000);
   }
 
   // ── List Page Actions ──────────────────────────────────────────────────────
@@ -69,20 +71,14 @@ class ActionQueuePage extends BasePage {
     await this.page.waitForTimeout(800);
   }
 
-  async clearSearch() {
-    await this.searchInput.clear();
-    await this.page.waitForTimeout(800);
-  }
-
   async clickPerformAction(rowIndex = 0) {
     await this.performActionBtns.nth(rowIndex).click();
     await this.page.waitForLoadState('domcontentloaded');
-    await this.page.waitForTimeout(3000);
+    await this.detailTitle.waitFor({ state: 'visible', timeout: 30000 });
+    await this.page.waitForTimeout(2000);
   }
 
-  async clickExport() {
-    await this.exportButton.click();
-  }
+  async clickExport() { await this.exportButton.click(); }
 
   // ── Detail Page Actions ────────────────────────────────────────────────────
   async clickApprove() {
@@ -106,9 +102,9 @@ class ActionQueuePage extends BasePage {
   }
 
   // ── Dialog Actions ─────────────────────────────────────────────────────────
-  async enterRemarks(text)      { await this.decisionRemarks.fill(text); }
-  async submitDecision()        { await this.submitDecisionBtn.click(); await this.page.waitForTimeout(500); }
-  async cancelDecision()        { await this.cancelDecisionBtn.click(); await this.page.waitForTimeout(500); }
+  async enterRemarks(text)   { await this.decisionRemarks.fill(text); }
+  async submitDecision()     { await this.submitDecisionBtn.click(); await this.page.waitForTimeout(500); }
+  async cancelDecision()     { await this.cancelDecisionBtn.click(); await this.page.waitForTimeout(500); }
 
   async submitApprovalWithRemarks(remarks) {
     await this.clickApprove();
@@ -123,13 +119,13 @@ class ActionQueuePage extends BasePage {
   }
 
   // ── Getters ────────────────────────────────────────────────────────────────
-  async getGridRowCount()          { return await this.gridRows.count(); }
-  async getStatTotalActions()      { return await this.statTotalActions.textContent(); }
-  async isDecisionDialogVisible()  { return await this.decisionDialog.isVisible(); }
-  async getDecisionDialogTitle()   { return (await this.decisionDialogTitle.textContent()).trim(); }
-  async isRemarksErrorVisible()    { return await this.remarksError.isVisible(); }
-  async getPaginationInfo()        { return await this.paginationInfo.textContent(); }
-  async getAllColumnHeaders()       { return await this.page.locator('[role="columnheader"]').allTextContents(); }
+  async getGridRowCount()         { return await this.gridRows.count(); }
+  async getStatTotalActions()     { return await this.statTotalActions.textContent(); }
+  async isDecisionDialogVisible() { return await this.decisionDialog.isVisible(); }
+  async getDecisionDialogTitle()  { return (await this.decisionDialogTitle.textContent()).trim(); }
+  async isRemarksErrorVisible()   { return await this.remarksError.isVisible(); }
+  async getPaginationInfo()       { return await this.paginationInfo.textContent(); }
+  async getAllColumnHeaders()     { return await this.page.locator('[role="columnheader"]').allTextContents(); }
 }
 
 module.exports = ActionQueuePage;

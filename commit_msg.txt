@@ -1,9 +1,12 @@
-fix: replace waitFor locator strategy with fixed 3s settle time in CI
+fix: login waitForURL was root cause - now waits 30s for redirect
 
-Previous approach: waitFor([role=group], 25s) and waitFor(RESOLUTION DESK, 25s)
-caused CI job to exceed 30min timeout (26 TCs x 45s each = 19+ mins).
+Root cause confirmed: loginAndGetPage helper had no waitForURL after login.
+Tests started navigating before login redirect completed, landing on login
+page instead of app, so all elements (h1, grid, buttons) were missing.
 
-New approach:
-- navigateToActionQueue/Details: goto + waitForTimeout(3000) for KendoUI settle
-- loginAndGetPage: check session reuse to avoid re-login on every TC
-- Total estimated CI time: 26 TCs x ~8s = ~3.5 mins well within 30min limit
+Fix:
+- loginAndGetPage: added waitForURL(not Login, 30s) + waitForLoadState after login
+- ActionQueuePage.navigateToActionQueue: wait for h1 heading (30s timeout) as
+  reliable page-ready signal, then 2s settle for KendoUI grid
+- ActionQueuePage.navigateToActionQueueDetails: wait for detailTitle h1 (30s)
+  then 2s settle for Resolution Desk panel
