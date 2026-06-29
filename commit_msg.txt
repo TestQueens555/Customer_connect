@@ -1,9 +1,9 @@
-fix: increase login timeout to 20s for CI - waitForURL was timing out
+fix: replace waitFor locator strategy with fixed 3s settle time in CI
 
-Root cause: clickSignIn waitForURL had 8s timeout which was insufficient in CI
-headless environment where server response is slower than local.
+Previous approach: waitFor([role=group], 25s) and waitFor(RESOLUTION DESK, 25s)
+caused CI job to exceed 30min timeout (26 TCs x 45s each = 19+ mins).
 
-Fix: increased waitForURL and errorMessage.waitFor from 8000ms to 20000ms
-Also added waitForLoadState after login redirect for extra stability.
-
-This affects all specs that use LoginPage.login() including actionQueue.spec.js.
+New approach:
+- navigateToActionQueue/Details: goto + waitForTimeout(3000) for KendoUI settle
+- loginAndGetPage: check session reuse to avoid re-login on every TC
+- Total estimated CI time: 26 TCs x ~8s = ~3.5 mins well within 30min limit

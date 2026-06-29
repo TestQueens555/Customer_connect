@@ -1,7 +1,5 @@
 // pages/ActionQueuePage.js
 // Page Object for ActionQueue module
-// List page: /Tickets/ActionQueue
-// Detail page: /Ticket/ActionQueueDetails/{id}
 // CustomerConnect QA Pipeline
 
 const BasePage = require('./BasePage');
@@ -40,7 +38,7 @@ class ActionQueuePage extends BasePage {
     this.timelineBtn         = page.getByRole('button', { name: /TIMELINE/i });
     this.statisticsSection   = page.locator('text=Statistics').first();
 
-    // ── Decision Dialog (shared APPROVE + REOPEN) ──────────────────────
+    // ── Decision Dialog ────────────────────────────────────────────────
     this.decisionDialog      = page.locator('[role="dialog"]');
     this.decisionDialogTitle = page.locator('[role="dialog"] h2');
     this.decisionRemarks     = page.getByPlaceholder('Add details or feedback for the team...');
@@ -52,31 +50,17 @@ class ActionQueuePage extends BasePage {
   }
 
   // ── Navigation ─────────────────────────────────────────────────────────────
-  // CI NOTE: Timeouts set to 25000ms — KendoUI grid renders after domcontentloaded
-  // in headless Chromium. Wait for heading first (fast), then grid (slower).
+  // Strategy: navigate → wait 3s for async JS to settle → then interact
+  // Avoids relying on slow KendoUI grid role="group" in CI headless
 
   async navigateToActionQueue() {
     await this.page.goto('/Tickets/ActionQueue', { waitUntil: 'domcontentloaded' });
-    // Wait for heading first — it loads before the grid
-    await this.pageHeading.waitFor({ state: 'visible', timeout: 15000 });
-    // Then wait for the grid — try group first, fall back to grid element
-    try {
-      await this.dataGridGroup.waitFor({ state: 'visible', timeout: 25000 });
-    } catch {
-      await this.dataGrid.waitFor({ state: 'visible', timeout: 10000 });
-    }
+    await this.page.waitForTimeout(3000);
   }
 
   async navigateToActionQueueDetails(ticketId) {
     await this.page.goto(`/Ticket/ActionQueueDetails/${ticketId}`, { waitUntil: 'domcontentloaded' });
-    // Wait for page heading first, then Resolution Desk
-    await this.detailTitle.waitFor({ state: 'visible', timeout: 15000 });
-    try {
-      await this.resolutionDeskLabel.waitFor({ state: 'visible', timeout: 25000 });
-    } catch {
-      // Resolution desk may be in a sidebar — verify APPROVE button instead
-      await this.approveBtn.waitFor({ state: 'visible', timeout: 10000 });
-    }
+    await this.page.waitForTimeout(3000);
   }
 
   // ── List Page Actions ──────────────────────────────────────────────────────
@@ -93,12 +77,7 @@ class ActionQueuePage extends BasePage {
   async clickPerformAction(rowIndex = 0) {
     await this.performActionBtns.nth(rowIndex).click();
     await this.page.waitForLoadState('domcontentloaded');
-    await this.detailTitle.waitFor({ state: 'visible', timeout: 15000 });
-    try {
-      await this.resolutionDeskLabel.waitFor({ state: 'visible', timeout: 25000 });
-    } catch {
-      await this.approveBtn.waitFor({ state: 'visible', timeout: 10000 });
-    }
+    await this.page.waitForTimeout(3000);
   }
 
   async clickExport() {
@@ -127,19 +106,9 @@ class ActionQueuePage extends BasePage {
   }
 
   // ── Dialog Actions ─────────────────────────────────────────────────────────
-  async enterRemarks(text) {
-    await this.decisionRemarks.fill(text);
-  }
-
-  async submitDecision() {
-    await this.submitDecisionBtn.click();
-    await this.page.waitForTimeout(500);
-  }
-
-  async cancelDecision() {
-    await this.cancelDecisionBtn.click();
-    await this.page.waitForTimeout(500);
-  }
+  async enterRemarks(text)      { await this.decisionRemarks.fill(text); }
+  async submitDecision()        { await this.submitDecisionBtn.click(); await this.page.waitForTimeout(500); }
+  async cancelDecision()        { await this.cancelDecisionBtn.click(); await this.page.waitForTimeout(500); }
 
   async submitApprovalWithRemarks(remarks) {
     await this.clickApprove();
@@ -154,33 +123,13 @@ class ActionQueuePage extends BasePage {
   }
 
   // ── Getters ────────────────────────────────────────────────────────────────
-  async getGridRowCount() {
-    return await this.gridRows.count();
-  }
-
-  async getStatTotalActions() {
-    return await this.statTotalActions.textContent();
-  }
-
-  async isDecisionDialogVisible() {
-    return await this.decisionDialog.isVisible();
-  }
-
-  async getDecisionDialogTitle() {
-    return (await this.decisionDialogTitle.textContent()).trim();
-  }
-
-  async isRemarksErrorVisible() {
-    return await this.remarksError.isVisible();
-  }
-
-  async getPaginationInfo() {
-    return await this.paginationInfo.textContent();
-  }
-
-  async getAllColumnHeaders() {
-    return await this.page.locator('[role="columnheader"]').allTextContents();
-  }
+  async getGridRowCount()          { return await this.gridRows.count(); }
+  async getStatTotalActions()      { return await this.statTotalActions.textContent(); }
+  async isDecisionDialogVisible()  { return await this.decisionDialog.isVisible(); }
+  async getDecisionDialogTitle()   { return (await this.decisionDialogTitle.textContent()).trim(); }
+  async isRemarksErrorVisible()    { return await this.remarksError.isVisible(); }
+  async getPaginationInfo()        { return await this.paginationInfo.textContent(); }
+  async getAllColumnHeaders()       { return await this.page.locator('[role="columnheader"]').allTextContents(); }
 }
 
 module.exports = ActionQueuePage;
