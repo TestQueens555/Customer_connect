@@ -1,5 +1,7 @@
-fix: add ActionQueue to all 3 workflow files
+fix: suppress XSS alert in CI - add addInitScript to dialog handler
 
-- playwright-tests.yml: scope detection now routes actionQueue files to tests/actionQueue.spec.js
-- ci.yml: lint check and syntax check now include all ActionQueue files
-- regression.yml: ActionQueue added to dropdown, FEATURE_MAP, run step, and nightly schedule restored
+- Root cause: TC-AQ-025 XSS payload fires real JS alert in headless CI, blocking Playwright and producing empty test-results.json
+- Fix: loginAndGetPage helper now calls page.addInitScript to override window.alert/confirm/prompt before any page JS runs
+- Also adds page.on dialog handler as backup for any remaining dialogs
+- This allows all 26 TCs to complete in CI without hanging on the XSS dialog
+- BUG-AQ-001 (XSS) remains open - alert is suppressed for CI stability only
