@@ -1,1 +1,3 @@
-test: Login 20/20 PASS - Claude browser execution complete
+feat: ActionQueue module - TCs, POM, spec, reports (26 TCs, 24 PASS, 2 FAIL)
+
+Bugs found: BUG-AQ-001 CRITICAL XSS in Decision Remarks, BUG-AQ-002 BACK button non-functional
