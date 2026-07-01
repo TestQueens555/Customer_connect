@@ -1,3 +1,4 @@
+// CI trigger: AddNewUser scope — 2026-07-01
 // tests/addnewuser.spec.js — Add New User (Admin/Partners)
 // CustomerConnect QA | Uses shared loginHelper
 'use strict';
