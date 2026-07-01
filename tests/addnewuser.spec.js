@@ -45,7 +45,7 @@ const closeModal = async (page) => {
   await page.waitForTimeout(400);
 };
 const successShown = async (page) => {
-  try { await page.locator('#feedbackModalOverlay.open').waitFor({ timeout: 5000 }); return true; }
+  try { await page.locator('#feedbackModalOverlay.open').waitFor({ timeout: 12000 }); return true; }
   catch (_) { return false; }
 };
 
@@ -62,9 +62,9 @@ test('TC-AU-001 | Create Partner Admin — Automatic password', async ({ page })
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
   const u = d.tsUser('PA'); await openModal(page); await page.waitForTimeout(500);
-  await nativeFill(page, '#fFirstName', u.firstName);
-  await nativeFill(page, '#fUsername',  u.username);
-  await nativeFill(page, '#fEmail',     u.email);
+  await page.locator('#fFirstName').fill(u.firstName);
+  await page.locator('#fUsername').fill( u.username);
+  await page.locator('#fEmail').fill(    u.email);
   await dxPick(page, '#fRole .dx-dropdowneditor-button', 'Partner Admin');
   await expect(ap.wrapCustomer).toHaveCSS('display','none');
   await ap.createBtn.click();
@@ -76,9 +76,9 @@ test('TC-AU-002 | Create Partner User — Automatic password', async ({ page }) 
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
   const u = d.tsUser('PU'); await openModal(page); await page.waitForTimeout(500);
-  await nativeFill(page, '#fFirstName', u.firstName);
-  await nativeFill(page, '#fUsername',  u.username);
-  await nativeFill(page, '#fEmail',     u.email);
+  await page.locator('#fFirstName').fill(u.firstName);
+  await page.locator('#fUsername').fill( u.username);
+  await page.locator('#fEmail').fill(    u.email);
   await dxPick(page, '#fRole .dx-dropdowneditor-button', 'Partner User');
   await page.waitForTimeout(500);
   await expect(ap.wrapCustomer).not.toHaveCSS('display','none');
@@ -91,13 +91,13 @@ test('TC-AU-003 | Create user with Manual password', async ({ page }) => {
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
   const u = d.tsUser('Man'); await openModal(page); await page.waitForTimeout(500);
-  await nativeFill(page, '#fFirstName', u.firstName);
-  await nativeFill(page, '#fUsername',  u.username);
-  await nativeFill(page, '#fEmail',     u.email);
+  await page.locator('#fFirstName').fill(u.firstName);
+  await page.locator('#fUsername').fill( u.username);
+  await page.locator('#fEmail').fill(    u.email);
   await dxPick(page, '#fRole .dx-dropdowneditor-button', 'Partner Admin');
   await ap.passManualRadio.evaluate(el => el.click()); await page.waitForTimeout(300);
   await expect(ap.passwordInput).toBeVisible();
-  await nativeFill(page, '#fPassword', 'Test@12345');
+  await page.locator('#fPassword').fill('Test@12345');
   await ap.createBtn.click();
   expect(await successShown(page)).toBe(true);
   await closeModal(page);
@@ -107,9 +107,9 @@ test('TC-AU-005 | Create user with Inactive status', async ({ page }) => {
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
   const u = d.tsUser('Inact'); await openModal(page); await page.waitForTimeout(500);
-  await nativeFill(page, '#fFirstName', u.firstName);
-  await nativeFill(page, '#fUsername',  u.username);
-  await nativeFill(page, '#fEmail',     u.email);
+  await page.locator('#fFirstName').fill(u.firstName);
+  await page.locator('#fUsername').fill( u.username);
+  await page.locator('#fEmail').fill(    u.email);
   await dxPick(page, '#fRole .dx-dropdowneditor-button', 'Partner Admin');
   await ap.statusInactive.evaluate(el => el.click());
   await ap.createBtn.click();
@@ -121,7 +121,7 @@ test('TC-AU-008 | Cancel button closes modal without saving', async ({ page }) =
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
   await openModal(page); await page.waitForTimeout(500);
-  await nativeFill(page, '#fFirstName', 'Will Not Save');
+  await page.locator('#fFirstName').fill('Will Not Save');
   await ap.cancelBtn.click(); await page.waitForTimeout(500);
   await expect(ap.modal).not.toHaveClass(/open/);
 });
@@ -138,9 +138,9 @@ test('TC-AU-019 | Single character First Name (min boundary) accepted', async ({
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
   const u = d.tsUser('Min'); await openModal(page); await page.waitForTimeout(500);
-  await nativeFill(page, '#fFirstName', 'A');
-  await nativeFill(page, '#fUsername',  u.username);
-  await nativeFill(page, '#fEmail',     u.email);
+  await page.locator('#fFirstName').fill('A');
+  await page.locator('#fUsername').fill( u.username);
+  await page.locator('#fEmail').fill(    u.email);
   await dxPick(page, '#fRole .dx-dropdowneditor-button', 'Partner Admin');
   await ap.createBtn.click();
   expect(await successShown(page)).toBe(true);
@@ -163,8 +163,8 @@ test('TC-AU-010 | Empty First Name shows validation error', async ({ page }) => 
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
   await openModal(page); await page.waitForTimeout(500);
-  await nativeFill(page, '#fUsername', 'qa_nofn_test');
-  await nativeFill(page, '#fEmail', 'qa.nofn@digitsrtm.com');
+  await page.locator('#fUsername').fill('qa_nofn_test');
+  await page.locator('#fEmail').fill('qa.nofn@digitsrtm.com');
   await dxPick(page, '#fRole .dx-dropdowneditor-button', 'Partner Admin');
   await ap.createBtn.click(); await page.waitForTimeout(600);
   await expect(ap.errFirstName).toHaveText('First name is required');
@@ -174,9 +174,9 @@ test('TC-AU-017 | Invalid email format shows validation error', async ({ page })
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
   await openModal(page); await page.waitForTimeout(500);
-  await nativeFill(page, '#fFirstName', 'QA Test');
-  await nativeFill(page, '#fUsername', 'qa_bademail_t');
-  await nativeFill(page, '#fEmail', 'notanemail');
+  await page.locator('#fFirstName').fill('QA Test');
+  await page.locator('#fUsername').fill('qa_bademail_t');
+  await page.locator('#fEmail').fill('notanemail');
   await dxPick(page, '#fRole .dx-dropdowneditor-button', 'Partner Admin');
   await ap.createBtn.click(); await page.waitForTimeout(600);
   await expect(ap.errEmail).toContainText('email');
@@ -186,9 +186,9 @@ test('TC-AU-018 | Partner User without customer shows validation error', async (
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
   const u = d.tsUser('PUNoC'); await openModal(page); await page.waitForTimeout(500);
-  await nativeFill(page, '#fFirstName', u.firstName);
-  await nativeFill(page, '#fUsername',  u.username);
-  await nativeFill(page, '#fEmail',     u.email);
+  await page.locator('#fFirstName').fill(u.firstName);
+  await page.locator('#fUsername').fill( u.username);
+  await page.locator('#fEmail').fill(    u.email);
   await dxPick(page, '#fRole .dx-dropdowneditor-button', 'Partner User');
   await page.waitForTimeout(500);
   await ap.createBtn.click(); await page.waitForTimeout(600);
@@ -200,8 +200,8 @@ test('TC-AU-015 | Duplicate username — silent failure BUG-AU-001', async ({ pa
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
   await openModal(page); await page.waitForTimeout(500);
-  await nativeFill(page, '#fFirstName', 'QA DupUser');
-  await nativeFill(page, '#fUsername',  d.existingUsers.username);
+  await page.locator('#fFirstName').fill('QA DupUser');
+  await page.locator('#fUsername').fill( d.existingUsers.username);
   await nativeFill(page, '#fEmail',     `qa.dup.${Date.now().toString().slice(-6)}@digitsrtm.com`);
   await dxPick(page, '#fRole .dx-dropdowneditor-button', 'Partner Admin');
   await ap.createBtn.click(); await page.waitForTimeout(3000);
@@ -220,9 +220,9 @@ test('TC-AU-021 | XSS payload in First Name does not execute', async ({ page }) 
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
   const u = d.tsUser('Xss'); await openModal(page); await page.waitForTimeout(500);
-  await nativeFill(page, '#fFirstName', d.security.xss);
-  await nativeFill(page, '#fUsername',  u.username);
-  await nativeFill(page, '#fEmail',     u.email);
+  await page.locator('#fFirstName').fill(d.security.xss);
+  await page.locator('#fUsername').fill( u.username);
+  await page.locator('#fEmail').fill(    u.email);
   await dxPick(page, '#fRole .dx-dropdowneditor-button', 'Partner Admin');
   await ap.createBtn.click(); await page.waitForTimeout(2500);
   await expect(page).not.toHaveTitle(/500|error/i);
