@@ -49,11 +49,26 @@ async function nativeFill(page, selector, value) {
 }
 
 async function dxPick(page, dropdownBtnSelector, itemText) {
+  // Click the dropdown trigger
   await page.locator(dropdownBtnSelector).click();
-  // Wait for dropdown items to appear (CI slower than local)
-  await page.locator('.dx-item.dx-list-item').first().waitFor({ timeout: 5000 });
-  await page.locator('.dx-item.dx-list-item', { hasText: itemText }).first().click();
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(800);   // wait for DX overlay animation in CI
+
+  // Target ONLY the currently visible overlay — avoids stale list items from
+  // previous dropdowns that may still be in the DOM (resolved immediately by first())
+  const visibleItem = page.locator(
+    '.dx-overlay-wrapper:not([style*="display: none"]) .dx-item.dx-list-item,' +
+    '.dx-popup-wrapper:not([style*="display: none"]) .dx-item.dx-list-item'
+  ).filter({ hasText: itemText });
+
+  // Fallback: any visible list item with the text
+  const fallbackItem = page.locator('.dx-item.dx-list-item:visible', { hasText: itemText });
+
+  try {
+    await visibleItem.first().click({ timeout: 5000 });
+  } catch (_) {
+    await fallbackItem.first().click({ timeout: 5000 });
+  }
+  await page.waitForTimeout(600);
 }
 
 module.exports = { loginAndGoTo, unauthAccess, nativeFill, dxPick };

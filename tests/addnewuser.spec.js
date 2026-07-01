@@ -1,4 +1,4 @@
-// CI: url.toString fix — 2026-07-01T18:45
+// CI: visible-overlay dxPick fix — 2026-07-01T19:57 — 2026-07-01T18:45
 // tests/addnewuser.spec.js — Add New User (Admin/Partners)
 // CustomerConnect QA | Uses shared loginHelper
 // CI fix: loginAndGoTo navigates to page internally — same ActionQueue pattern
