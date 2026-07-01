@@ -45,8 +45,17 @@ const closeModal = async (page) => {
   await page.waitForTimeout(400);
 };
 const successShown = async (page) => {
-  try { await page.locator('#feedbackModalOverlay.open').waitFor({ timeout: 12000 }); return true; }
-  catch (_) { return false; }
+  // feedbackModalOverlay does NOT add class 'open' — check feedbackTitle text instead
+  try {
+    await page.waitForFunction(
+      () => {
+        const t = document.querySelector('#feedbackTitle');
+        return t && t.textContent.trim() === 'Success';
+      },
+      { timeout: 12000 }
+    );
+    return true;
+  } catch (_) { return false; }
 };
 
 // ── POSITIVE ──────────────────────────────────────────────────────────────────
