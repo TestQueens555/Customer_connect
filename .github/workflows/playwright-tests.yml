@@ -58,6 +58,8 @@ jobs:
             TEST_PATH="tests/createTicket.spec.js"; FEATURE="CreateTicket"; LABEL="Create Ticket Module"
           elif echo "$CHANGED" | grep -qE "tests/actionQueue|pages/ActionQueuePage|test-data/actionQueueData|Feature Reports/ActionQueue"; then
             TEST_PATH="tests/actionQueue.spec.js"; FEATURE="ActionQueue"; LABEL="Action Queue Module"
+          elif echo "$CHANGED" | grep -qE "tests/addnewuser|pages/AddNewUserPage|test-data/addNewUserData|test-data/addnewuser"; then
+            TEST_PATH="tests/addnewuser.spec.js"; FEATURE="AddNewUser"; LABEL="Add New User Module"
           elif echo "$CHANGED" | grep -qE "^\.github/|playwright\.config|global-setup|package\.json|pages/BasePage|utils/"; then
             TEST_PATH="tests/login.spec.js"; FEATURE="Login"; LABEL="Login Module (config change smoke)"
           else
