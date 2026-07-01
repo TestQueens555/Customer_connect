@@ -77,7 +77,17 @@ test('TC-AU-001 | Create Partner Admin — Automatic password', async ({ page })
   await dxPick(page, '#fRole .dx-dropdowneditor-button', 'Partner Admin');
   await expect(ap.wrapCustomer).toHaveCSS('display','none');
   await ap.createBtn.click();
-  expect(await successShown(page)).toBe(true);
+  // Debug: capture page state to diagnose failure
+  const state001 = await page.evaluate(() => ({
+    feedbackTitle: document.querySelector('#feedbackTitle')?.textContent?.trim(),
+    feedbackClass: document.querySelector('#feedbackModalOverlay')?.className,
+    modalClass: document.querySelector('#userModalOverlay')?.className,
+    errFields: [...document.querySelectorAll('.um-field.error')].map(e=>({id:e.id,msg:e.querySelector('.um-field-error')?.textContent?.trim()})),
+    roleValue: document.querySelector('#fRole input')?.value
+  }));
+  const success001 = await successShown(page);
+  // Throw with debug info on failure
+  if (!success001) throw new Error('successShown=false state: ' + JSON.stringify(state001));
   await closeModal(page);
 });
 
