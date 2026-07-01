@@ -27,11 +27,11 @@ class LoginPage extends BasePage {
     // Wait for either navigation away from login page OR error message to appear
     // CI timeout increased to 20s — server response slower in headless CI
     await Promise.race([
-      this.page.waitForURL(url => !url.includes('Login'), { timeout: 20000 }).catch(() => {}),
+      this.page.waitForURL(url => url && !url.toString().includes('Login'), { timeout: 20000 }).catch(() => {}),
       this.errorMessage.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {}),
     ]);
     // Extra safety: ensure page is fully settled after login redirect
-    await this.page.waitForLoadState('domcontentloaded');
+    await this.page.waitForLoadState('domcontentloaded').catch(() => {});
   }
 
   async login(username, password) {

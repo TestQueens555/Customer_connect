@@ -21,7 +21,7 @@ async function loginAndNavigate(page) {
   const lp = new (require('../pages/LoginPage'))(page);
   await lp.navigate('/Account/Login?ReturnUrl=%2F');
   await lp.login('sajith_xyz', 'User@123');
-  await page.waitForURL(url => !url.includes('Login'), { timeout: 30000 });
+  await page.waitForURL(url => !url.toString().includes('Login'), { timeout: 30000 });
   await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(2000);
   return new AddNewUserPage(page);

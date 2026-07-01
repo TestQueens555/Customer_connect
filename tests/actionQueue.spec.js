@@ -23,7 +23,7 @@ async function loginAndGetPage(page) {
   await lp.navigate('/Account/Login?ReturnUrl=%2F');
   await lp.login(aqData.validUser.username, aqData.validUser.password);
   // Wait until redirected away from login page
-  await page.waitForURL(url => !url.includes('Login'), { timeout: 30000 });
+  await page.waitForURL(url => !url.toString().includes('Login'), { timeout: 30000 });
   await page.waitForLoadState('domcontentloaded');
 
   return new ActionQueuePage(page);
