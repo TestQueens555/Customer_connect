@@ -50,9 +50,10 @@ async function nativeFill(page, selector, value) {
 
 async function dxPick(page, dropdownBtnSelector, itemText) {
   await page.locator(dropdownBtnSelector).click();
-  await page.waitForTimeout(700);
+  // Wait for dropdown items to appear (CI slower than local)
+  await page.locator('.dx-item.dx-list-item').first().waitFor({ timeout: 5000 });
   await page.locator('.dx-item.dx-list-item', { hasText: itemText }).first().click();
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(500);
 }
 
 module.exports = { loginAndGoTo, unauthAccess, nativeFill, dxPick };

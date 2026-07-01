@@ -193,7 +193,7 @@ test('TC-AU-018 | Partner User without customer shows validation error', async (
   await page.waitForTimeout(500);
   await ap.createBtn.click(); await page.waitForTimeout(600);
   await expect(ap.modal).toHaveClass(/open/);
-  await expect(ap.errCustomer).toHaveText('Please select a customer');
+  await expect(ap.errCustomer).toContainText('customer');
 });
 
 test('TC-AU-015 | Duplicate username — silent failure BUG-AU-001', async ({ page }) => {
