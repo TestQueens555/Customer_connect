@@ -61,7 +61,7 @@ test('TC-AU-007 | Page loads with heading, stats, grid, Add New User button', as
 test('TC-AU-001 | Create Partner Admin — Automatic password', async ({ page }) => {
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
-  const u = d.tsUser('PA'); await openModal(page);
+  const u = d.tsUser('PA'); await openModal(page); await page.waitForTimeout(500);
   await nativeFill(page, '#fFirstName', u.firstName);
   await nativeFill(page, '#fUsername',  u.username);
   await nativeFill(page, '#fEmail',     u.email);
@@ -75,7 +75,7 @@ test('TC-AU-001 | Create Partner Admin — Automatic password', async ({ page })
 test('TC-AU-002 | Create Partner User — Automatic password', async ({ page }) => {
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
-  const u = d.tsUser('PU'); await openModal(page);
+  const u = d.tsUser('PU'); await openModal(page); await page.waitForTimeout(500);
   await nativeFill(page, '#fFirstName', u.firstName);
   await nativeFill(page, '#fUsername',  u.username);
   await nativeFill(page, '#fEmail',     u.email);
@@ -90,12 +90,12 @@ test('TC-AU-002 | Create Partner User — Automatic password', async ({ page }) 
 test('TC-AU-003 | Create user with Manual password', async ({ page }) => {
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
-  const u = d.tsUser('Man'); await openModal(page);
+  const u = d.tsUser('Man'); await openModal(page); await page.waitForTimeout(500);
   await nativeFill(page, '#fFirstName', u.firstName);
   await nativeFill(page, '#fUsername',  u.username);
   await nativeFill(page, '#fEmail',     u.email);
   await dxPick(page, '#fRole .dx-dropdowneditor-button', 'Partner Admin');
-  await ap.passManualRadio.click(); await page.waitForTimeout(300);
+  await ap.passManualRadio.evaluate(el => el.click()); await page.waitForTimeout(300);
   await expect(ap.passwordInput).toBeVisible();
   await nativeFill(page, '#fPassword', 'Test@12345');
   await ap.createBtn.click();
@@ -106,12 +106,12 @@ test('TC-AU-003 | Create user with Manual password', async ({ page }) => {
 test('TC-AU-005 | Create user with Inactive status', async ({ page }) => {
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
-  const u = d.tsUser('Inact'); await openModal(page);
+  const u = d.tsUser('Inact'); await openModal(page); await page.waitForTimeout(500);
   await nativeFill(page, '#fFirstName', u.firstName);
   await nativeFill(page, '#fUsername',  u.username);
   await nativeFill(page, '#fEmail',     u.email);
   await dxPick(page, '#fRole .dx-dropdowneditor-button', 'Partner Admin');
-  await ap.statusInactive.click();
+  await ap.statusInactive.evaluate(el => el.click());
   await ap.createBtn.click();
   expect(await successShown(page)).toBe(true);
   await closeModal(page);
@@ -120,7 +120,7 @@ test('TC-AU-005 | Create user with Inactive status', async ({ page }) => {
 test('TC-AU-008 | Cancel button closes modal without saving', async ({ page }) => {
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
-  await openModal(page);
+  await openModal(page); await page.waitForTimeout(500);
   await nativeFill(page, '#fFirstName', 'Will Not Save');
   await ap.cancelBtn.click(); await page.waitForTimeout(500);
   await expect(ap.modal).not.toHaveClass(/open/);
@@ -129,7 +129,7 @@ test('TC-AU-008 | Cancel button closes modal without saving', async ({ page }) =
 test('TC-AU-006 | Close (✕) button dismisses modal', async ({ page }) => {
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
-  await openModal(page);
+  await openModal(page); await page.waitForTimeout(500);
   await ap.modalClose.click(); await page.waitForTimeout(500);
   await expect(ap.modal).not.toHaveClass(/open/);
 });
@@ -137,7 +137,7 @@ test('TC-AU-006 | Close (✕) button dismisses modal', async ({ page }) => {
 test('TC-AU-019 | Single character First Name (min boundary) accepted', async ({ page }) => {
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
-  const u = d.tsUser('Min'); await openModal(page);
+  const u = d.tsUser('Min'); await openModal(page); await page.waitForTimeout(500);
   await nativeFill(page, '#fFirstName', 'A');
   await nativeFill(page, '#fUsername',  u.username);
   await nativeFill(page, '#fEmail',     u.email);
@@ -151,7 +151,7 @@ test('TC-AU-019 | Single character First Name (min boundary) accepted', async ({
 test('TC-AU-013 | Empty form submit shows all validation errors', async ({ page }) => {
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
-  await openModal(page);
+  await openModal(page); await page.waitForTimeout(500);
   await ap.createBtn.click(); await page.waitForTimeout(600);
   await expect(ap.modal).toHaveClass(/open/);
   await expect(ap.errFirstName).toHaveText('First name is required');
@@ -162,7 +162,7 @@ test('TC-AU-013 | Empty form submit shows all validation errors', async ({ page 
 test('TC-AU-010 | Empty First Name shows validation error', async ({ page }) => {
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
-  await openModal(page);
+  await openModal(page); await page.waitForTimeout(500);
   await nativeFill(page, '#fUsername', 'qa_nofn_test');
   await nativeFill(page, '#fEmail', 'qa.nofn@digitsrtm.com');
   await dxPick(page, '#fRole .dx-dropdowneditor-button', 'Partner Admin');
@@ -173,7 +173,7 @@ test('TC-AU-010 | Empty First Name shows validation error', async ({ page }) => 
 test('TC-AU-017 | Invalid email format shows validation error', async ({ page }) => {
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
-  await openModal(page);
+  await openModal(page); await page.waitForTimeout(500);
   await nativeFill(page, '#fFirstName', 'QA Test');
   await nativeFill(page, '#fUsername', 'qa_bademail_t');
   await nativeFill(page, '#fEmail', 'notanemail');
@@ -185,7 +185,7 @@ test('TC-AU-017 | Invalid email format shows validation error', async ({ page })
 test('TC-AU-018 | Partner User without customer shows validation error', async ({ page }) => {
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
-  const u = d.tsUser('PUNoC'); await openModal(page);
+  const u = d.tsUser('PUNoC'); await openModal(page); await page.waitForTimeout(500);
   await nativeFill(page, '#fFirstName', u.firstName);
   await nativeFill(page, '#fUsername',  u.username);
   await nativeFill(page, '#fEmail',     u.email);
@@ -199,7 +199,7 @@ test('TC-AU-018 | Partner User without customer shows validation error', async (
 test('TC-AU-015 | Duplicate username — silent failure BUG-AU-001', async ({ page }) => {
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
-  await openModal(page);
+  await openModal(page); await page.waitForTimeout(500);
   await nativeFill(page, '#fFirstName', 'QA DupUser');
   await nativeFill(page, '#fUsername',  d.existingUsers.username);
   await nativeFill(page, '#fEmail',     `qa.dup.${Date.now().toString().slice(-6)}@digitsrtm.com`);
@@ -219,7 +219,7 @@ test('TC-AU-022 | Unauthenticated access redirects to login', async ({ browser }
 test('TC-AU-021 | XSS payload in First Name does not execute', async ({ page }) => {
   const ap = await loginAndNavigate(page);
   await goToPartners(page);
-  const u = d.tsUser('Xss'); await openModal(page);
+  const u = d.tsUser('Xss'); await openModal(page); await page.waitForTimeout(500);
   await nativeFill(page, '#fFirstName', d.security.xss);
   await nativeFill(page, '#fUsername',  u.username);
   await nativeFill(page, '#fEmail',     u.email);

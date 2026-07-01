@@ -25,7 +25,7 @@ class AddNewUserPage extends BasePage {
     this.modal          = page.locator('#userModalOverlay');
     this.modalClose     = page.locator('button.um-modal-close');
     this.cancelBtn      = page.locator('button.um-btn-secondary');
-    this.createBtn      = page.locator('button.um-btn-primary').last();
+    this.createBtn      = page.locator('#userModal button.um-btn-primary');
     // ── Feedback ──────────────────────────────────────────────────────────────
     this.feedbackOverlay = page.locator('#feedbackModalOverlay');
     this.feedbackTitle   = page.locator('#feedbackTitle');
