@@ -8,7 +8,7 @@ const ActionQueuePage  = require('../pages/ActionQueuePage');
 const { loginAndGoTo, unauthAccess, nativeFill, dxPick, waitForFeedback } = require('../utils/loginHelper');
 const LoginPage        = require('../pages/LoginPage');
 const aqData           = require('../test-// loginAndGetPage: uses shared loginHelper (imported above)
-const loginAndGetPage = (page) => loginAndGoTo(page, null); tests/actionQueue.spec.js
+const loginAndGetPage = (page) => loginAndGoTo(page, null, ActionQueuePage); tests/actionQueue.spec.js
 // E2E Test Suite — ActionQueue Module
 // CustomerConnect QA Pipeline
 // Run: npx playwright test tests/actionQueue.spec.js --config playwright.config.js

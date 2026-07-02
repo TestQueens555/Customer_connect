@@ -100,7 +100,7 @@ jobs:
             TEST_PATH="tests/login.spec.js"; FEATURE="Login"; LABEL="Login Module (default)"
           fi
 
-                    echo "test_path=$TEST_PATH" >> $GITHUB_OUTPUT
+          echo "test_path=$TEST_PATH" >> $GITHUB_OUTPUT
           echo "feature=$FEATURE"     >> $GITHUB_OUTPUT
           echo "label=$LABEL"         >> $GITHUB_OUTPUT
           echo "Scope → $LABEL ($TEST_PATH)"
