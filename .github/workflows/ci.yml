@@ -130,8 +130,20 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+
+      - name: Install Playwright OS deps only (cache hit)
+        run: npx playwright install-deps chromium
+        if: steps.pw-cache.outputs.cache-hit == 'true'
 
       - name: Run smoke test — TC-LOGIN-001
         run: npx playwright test -g "TC-LOGIN-001" --reporter=line
