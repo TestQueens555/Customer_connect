@@ -12,7 +12,7 @@ module.exports = {
   nonExistentTicketId: 99999,
 
   // ── Search ───────────────────────────────────────────────────────────
-  validSearchTerm:    'YSG Loyalty-8924-1',
+  validSearchTerm:    'YSG',
   noResultSearchTerm: 'XXXXNONEXIST9999',
 
   // ── Decision Remarks ─────────────────────────────────────────────────
