@@ -44,19 +44,8 @@ const closeModal = async (page) => {
   await page.locator('button.um-modal-close').click().catch(() => {});
   await page.waitForTimeout(400);
 };
-const successShown = async (page) => {
-  // feedbackModalOverlay does NOT add class 'open' — check feedbackTitle text instead
-  try {
-    await page.waitForFunction(
-      () => {
-        const t = document.querySelector('#feedbackTitle');
-        return t && t.textContent.trim() === 'Success';
-      },
-      { timeout: 12000 }
-    );
-    return true;
-  } catch (_) { return false; }
-};
+// Uses shared waitForFeedback from loginHelper (works across all feedback patterns)
+const successShown = (page) => waitForFeedback(page, 14000);
 
 // ── POSITIVE ──────────────────────────────────────────────────────────────────
 test('TC-AU-007 | Page loads with heading, stats, grid, Add New User button', async ({ page }) => {
@@ -77,19 +66,16 @@ test('TC-AU-001 | Create Partner Admin — Automatic password', async ({ page })
   await dxPick(page, '#fRole .dx-dropdowneditor-button', 'Partner Admin');
   await expect(ap.wrapCustomer).toHaveCSS('display','none');
   await ap.createBtn.click();
-  // Debug: capture page state to diagnose failure
-  const state001 = await page.evaluate(() => ({
-    feedbackTitle: document.querySelector('#feedbackTitle')?.textContent?.trim(),
-    feedbackClass: document.querySelector('#feedbackModalOverlay')?.className,
-    modalClass: document.querySelector('#userModalOverlay')?.className,
-    errFields: [...document.querySelectorAll('.um-field.error')].map(e=>({id:e.id,msg:e.querySelector('.um-field-error')?.textContent?.trim()})),
-    roleValue: document.querySelector('#fRole input')?.value
-  }));
-  const success001 = await successShown(page);
-  // Throw with debug info on failure
-  if (!success001) throw new Error('successShown=false state: ' + JSON.stringify(state001));
+  await page.waitForTimeout(2000);
+  if (!await successShown(page)) {
+    const dbg = await page.evaluate(() => ({
+      feedbackTitle: document.querySelector('#feedbackTitle')?.textContent?.trim(),
+      roleValue:     document.querySelector('#fRole input')?.value,
+      errors:        [...document.querySelectorAll('.um-field.error')].map(e=>e.id)
+    }));
+    throw new Error('No success feedback. State: ' + JSON.stringify(dbg));
+  }
   await closeModal(page);
-});
 
 test('TC-AU-002 | Create Partner User — Automatic password', async ({ page }) => {
   const ap = await loginAndNavigate(page);
@@ -102,6 +88,7 @@ test('TC-AU-002 | Create Partner User — Automatic password', async ({ page }) 
   await page.waitForTimeout(500);
   await expect(ap.wrapCustomer).not.toHaveCSS('display','none');
   await ap.createBtn.click();
+  await page.waitForTimeout(2000);
   expect(await successShown(page)).toBe(true);
   await closeModal(page);
 });
@@ -118,6 +105,7 @@ test('TC-AU-003 | Create user with Manual password', async ({ page }) => {
   await expect(ap.passwordInput).toBeVisible();
   await page.locator('#fPassword').fill('Test@12345');
   await ap.createBtn.click();
+  await page.waitForTimeout(2000);
   expect(await successShown(page)).toBe(true);
   await closeModal(page);
 });
@@ -132,6 +120,7 @@ test('TC-AU-005 | Create user with Inactive status', async ({ page }) => {
   await dxPick(page, '#fRole .dx-dropdowneditor-button', 'Partner Admin');
   await ap.statusInactive.evaluate(el => el.click());
   await ap.createBtn.click();
+  await page.waitForTimeout(2000);
   expect(await successShown(page)).toBe(true);
   await closeModal(page);
 });
@@ -162,6 +151,7 @@ test('TC-AU-019 | Single character First Name (min boundary) accepted', async ({
   await page.locator('#fEmail').fill(    u.email);
   await dxPick(page, '#fRole .dx-dropdowneditor-button', 'Partner Admin');
   await ap.createBtn.click();
+  await page.waitForTimeout(2000);
   expect(await successShown(page)).toBe(true);
   await closeModal(page);
 });

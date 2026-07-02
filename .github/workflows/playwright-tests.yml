@@ -50,18 +50,194 @@ jobs:
           CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "all")
           echo "Changed files: $CHANGED"
 
-          if echo "$CHANGED" | grep -qE "tests/login|pages/LoginPage|test-data/loginData|Feature Reports/Login"; then
+          # ══════════════════════════════════════════════════════════════════
+          # AUTO-DETECT: any *.spec.js file in the diff → use it directly.
+          # New feature specs NEVER need a manual elif rule.
+          # ══════════════════════════════════════════════════════════════════
+          SPEC=$(echo "$CHANGED" | grep '^tests/.*\.spec\.js$' | head -1)
+
+          if [ -n "$SPEC" ] && [ -f "$SPEC" ]; then
+            TEST_PATH="$SPEC"
+            BASENAME=$(basename "$SPEC" .spec.js)
+            # Map known basenames to correct PascalCase feature names
+            case "$BASENAME" in
+              login)           FEATURE="Login" ;;
+              dashboard)       FEATURE="Dashboard" ;;
+              actionqueue)     FEATURE="ActionQueue" ;;
+              actionQueue)     FEATURE="ActionQueue" ;;
+              createticket)    FEATURE="CreateTicket" ;;
+              createTicket)    FEATURE="CreateTicket" ;;
+              addnewuser)      FEATURE="AddNewUser" ;;
+              addNewUser)      FEATURE="AddNewUser" ;;
+              *)
+                # Generic: PascalCase conversion
+                FEATURE=$(node -e "var s=process.argv[1];console.log(s.split(/[-_]/).map(function(w){return w[0].toUpperCase()+w.slice(1);}).join(''))" "$BASENAME")
+                ;;
+            esac
+            LABEL="$FEATURE Module (auto-detected)"
+            echo "AUTO-DETECTED: $TEST_PATH → $FEATURE"
+
+          # ══════════════════════════════════════════════════════════════════
+          # FALLBACK: pages / test-data changed but no spec file in diff
+          # ══════════════════════════════════════════════════════════════════
+          elif echo "$CHANGED" | grep -qE "pages/LoginPage|test-data/loginData|test-data/loginMetadata"; then
             TEST_PATH="tests/login.spec.js"; FEATURE="Login"; LABEL="Login Module"
-          elif echo "$CHANGED" | grep -qE "tests/dashboard|pages/DashboardPage|test-data/dashboardData|Feature Reports/Dashboard"; then
+          elif echo "$CHANGED" | grep -qE "pages/DashboardPage|test-data/dashboardData|test-data/dashboardMetadata"; then
             TEST_PATH="tests/dashboard.spec.js"; FEATURE="Dashboard"; LABEL="Dashboard Module"
-          elif echo "$CHANGED" | grep -qE "tests/createTicket|pages/CreateTicketPage|test-data/createTicketData|Feature Reports/CreateTicket"; then
+          elif echo "$CHANGED" | grep -qE "pages/CreateTicketPage|test-data/createTicket"; then
             TEST_PATH="tests/createTicket.spec.js"; FEATURE="CreateTicket"; LABEL="Create Ticket Module"
-          elif echo "$CHANGED" | grep -qE "tests/actionQueue|pages/ActionQueuePage|test-data/actionQueueData|Feature Reports/ActionQueue"; then
+          elif echo "$CHANGED" | grep -qE "pages/ActionQueuePage|test-data/actionQueue"; then
             TEST_PATH="tests/actionQueue.spec.js"; FEATURE="ActionQueue"; LABEL="Action Queue Module"
-          elif echo "$CHANGED" | grep -qE "tests/addnewuser|pages/AddNewUserPage|test-data/addNewUserData|test-data/addnewuser"; then
+          elif echo "$CHANGED" | grep -qE "pages/AddNewUserPage|test-data/addNewUser|test-data/addnewuser"; then
             TEST_PATH="tests/addnewuser.spec.js"; FEATURE="AddNewUser"; LABEL="Add New User Module"
-          elif echo "$CHANGED" | grep -qE "^\.github/|playwright\.config|global-setup|package\.json|pages/BasePage|utils/"; then
-            TEST_PATH="tests/login.spec.js"; FEATURE="Login"; LABEL="Login Module (config change smoke)"
+
+          # ══════════════════════════════════════════════════════════════════
+          # utils/loginHelper or formExplorer change → Login smoke
+          # ══════════════════════════════════════════════════════════════════
+          elif echo "$CHANGED" | grep -qE "^\.github/|playwright\.config|global-setup|package\.json|pages/BasePage|utils/loginHelper|utils/formExplorer|utils/generate-report"; then
+            TEST_PATH="tests/login.spec.js"; FEATURE="Login"; LABEL="Login Module (config smoke)"
+          else
+            TEST_PATH="tests/login.spec.js"; FEATURE="Login"; LABEL="Login Module (default)"
+          fi
+
+                    echo "test_path=$TEST_PATH" >> $GITHUB_OUTPUT
+          echo "feature=$FEATURE"     >> $GITHUB_OUTPUT
+          echo "label=$LABEL"         >> $GITHUB_OUTPUT
+          echo "Scope → $LABEL ($TEST_PATH)"
+
+      - name: Create output directories
+        run: |
+          mkdir -p reports/monocart reports/html-report reports/screenshots
+          mkdir -p "Test Execution Report_Git/Feature Reports"
+          mkdir -p "Test Execution Report_Git/Daily Reports"
+
+      - name: "Run — ${{ steps.scope.outputs.label }}"
+        id: playwright
+        env:
+          CI: "true"
+        run: |
+          if [ "${{ steps.scope.outputs.test_path }}" = "all" ]; then
+            npx playwright test --config playwright.config.js
+          else
+            npx playwright test ${{ steps.scope.outputs.test_path }} --config playwright.config.js
+          fi
+        continue-on-error: true
+
+      - name: Generate Feature Excel report
+        if: always()
+        env:
+          REPORT_DIR: "Test Execution Report_Git"
+        run: |
+          FEATURE="${{ steps.scope.outputs.feature }}"
+          if [ "$FEATURE" = "All" ]; then
+            for spec in tests/*.spec.js; do
+              fname=$(basename "$spec" .spec.js)
+              FEAT="$(echo "${fname:0:1}" | tr '[:lower:]' '[:upper:]')${fname:1}"
+              echo "→ Generating report for $FEAT"
+              REPORT_DIR="Test Execution Report_Git" node utils/generate-report.js --feature="$FEAT" || true
+            done
+          else
+            REPORT_DIR="Test Execution Report_Git" node utils/generate-report.js --feature="$FEATURE"
+          fi
+
+      - name: Generate Daily Bug report
+        if: always()
+        run: node utils/generate-daily-bug-report.js || true
+
+      - name: Commit and push Excel reports
+        if: always() && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "Test Execution Report_Git/" || true
+          if git diff --cached --quiet; then
+            echo "No report changes — skipping commit"
+            exit 0
+          fi
+          DATE=$(date +'%Y-%m-%d %H:%M')
+          git commit -m "CI Reports [$DATE]: ${{ steps.scope.outputs.feature }} — Excel reports updated"
+          PUSHED=false
+          for i in 1 2 3; do
+            echo "Push attempt $i..."
+            git pull --rebase origin main
+            if git push origin main; then
+              PUSHED=true
+              break
+            fi
+            echo "  → failed, retrying in 10 s..."
+            sleep 10
+          done
+          if [ "$PUSHED" = "true" ]; then
+            echo "✅ Excel reports pushed"
+          else
+            echo "❌ All push attempts failed"
+            exit 1
+          fi
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-run-${{ github.run_number }}
+          path: reports/html-report/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Write job summary
+        if: always()
+        run: |
+          if [ -f reports/test-results.json ]; then
+            PARSE='const r=require("./reports/test-results.json");const all=r.suites?.flatMap(s=>s.specs?.flatMap(sp=>sp.tests)||[])||[];const s=all.map(t=>t.results?.[0]?.status);process.stdout.write([all.length,s.filter(x=>x==="passed").length,s.filter(x=>x==="failed").length].join(","));'
+            COUNTS=$(node -e "$PARSE" 2>/dev/null || echo "?,?,?")
+            TOTAL=$(echo "$COUNTS" | cut -d, -f1)
+            PASSED=$(echo "$COUNTS" | cut -d, -f2)
+            FAILED=$(echo "$COUNTS" | cut -d, -f3)
+          else
+            TOTAL="?"; PASSED="?"; FAILED="?"
+          fi
+          {
+            echo "## 🧪 ${{ steps.scope.outputs.label }} | Run #${{ github.run_number }}"
+            echo "| Metric | Value |"
+            echo "|--------|-------|"
+            echo "| **Triggered by** | ${{ github.actor }} |"
+            echo "| **Scope** | ${{ steps.scope.outputs.label }} |"
+            echo "| **Total TCs** | $TOTAL |"
+            echo "| **✅ Passed** | $PASSED |"
+            echo "| **❌ Failed** | $FAILED |"
+            echo ""
+            echo "### 📁 Reports"
+            echo "| Path | File |"
+            echo "|------|------|"
+            echo "| \`Test Execution Report_Git/Feature Reports/\` | \`${{ steps.scope.outputs.feature }}.xlsx\` |"
+            echo "| \`Test Execution Report_Git/Daily Reports/\` | \`BugReport_$(date +%d-%b-%Y).xlsx\` |"
+          } >> $GITHUB_STEP_SUMMARY
+ | head -1)
+          if [ -n "$SPEC" ] && [ -f "$SPEC" ]; then
+            TEST_PATH="$SPEC"
+            BASENAME=$(basename "$SPEC" .spec.js)
+            # Convert to PascalCase: addnewuser→AddNewUser, create-ticket→CreateTicket
+            FEATURE=$(node -e "var s=process.argv[1];console.log(s.split(/[-_]/).map(function(w){return w[0].toUpperCase()+w.slice(1);}).join(''))" "$BASENAME")
+            LABEL="$FEATURE Module (auto-detected)"
+            echo "AUTO-DETECTED spec: $TEST_PATH → $FEATURE"
+
+          # ── PAGES / TEST-DATA changed (no spec file): map to known spec ─────
+          elif echo "$CHANGED" | grep -qE "pages/LoginPage|test-data/loginData"; then
+            TEST_PATH="tests/login.spec.js"; FEATURE="Login"; LABEL="Login Module"
+          elif echo "$CHANGED" | grep -qE "pages/DashboardPage|test-data/dashboardData"; then
+            TEST_PATH="tests/dashboard.spec.js"; FEATURE="Dashboard"; LABEL="Dashboard Module"
+          elif echo "$CHANGED" | grep -qE "pages/CreateTicketPage|test-data/createTicket"; then
+            TEST_PATH="tests/createTicket.spec.js"; FEATURE="CreateTicket"; LABEL="Create Ticket Module"
+          elif echo "$CHANGED" | grep -qE "pages/ActionQueuePage|test-data/actionQueue"; then
+            TEST_PATH="tests/actionQueue.spec.js"; FEATURE="ActionQueue"; LABEL="Action Queue Module"
+          elif echo "$CHANGED" | grep -qE "pages/AddNewUserPage|test-data/addNewUser|test-data/addnewuser"; then
+            TEST_PATH="tests/addnewuser.spec.js"; FEATURE="AddNewUser"; LABEL="Add New User Module"
+
+          # ── CONFIG / UTILS changed: Login smoke ──────────────────────────────
+          elif echo "$CHANGED" | grep -qE "^\.github/|playwright\.config|global-setup|package\.json|pages/BasePage|utils/loginHelper|utils/formExplorer"; then
+            TEST_PATH="tests/login.spec.js"; FEATURE="Login"; LABEL="Login Module (config smoke)"
+
+          # ── Default ───────────────────────────────────────────────────────────
           else
             TEST_PATH="tests/login.spec.js"; FEATURE="Login"; LABEL="Login Module (default)"
           fi

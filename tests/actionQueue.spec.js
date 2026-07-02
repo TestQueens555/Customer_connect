@@ -5,29 +5,24 @@
 
 const { test, expect } = require('@playwright/test');
 const ActionQueuePage  = require('../pages/ActionQueuePage');
+const { loginAndGoTo, unauthAccess, nativeFill, dxPick, waitForFeedback } = require('../utils/loginHelper');
+const LoginPage        = require('../pages/LoginPage');
+const aqData           = require('../test-// loginAndGetPage: uses shared loginHelper (imported above)
+const loginAndGetPage = (page) => loginAndGoTo(page, null); tests/actionQueue.spec.js
+// E2E Test Suite — ActionQueue Module
+// CustomerConnect QA Pipeline
+// Run: npx playwright test tests/actionQueue.spec.js --config playwright.config.js
+
+const { test, expect } = require('@playwright/test');
+const ActionQueuePage  = require('../pages/ActionQueuePage');
+const { loginAndGoTo, unauthAccess, nativeFill, dxPick, waitForFeedback } = require('../utils/loginHelper');
 const LoginPage        = require('../pages/LoginPage');
 const aqData           = require('../test-data/actionQueueData');
 
 // ── Login helper — suppresses native dialogs, logs in, returns AQ page object ─
-async function loginAndGetPage(page) {
-  // Suppress window.alert/confirm/prompt before any page JS runs
-  await page.addInitScript(() => {
-    window.alert   = () => {};
-    window.confirm = () => true;
-    window.prompt  = () => '';
-  });
-  page.on('dialog', async d => { try { await d.dismiss(); } catch (_) {} });
+// loginAndGetPage: uses shared loginHelper
+const loginAndGetPage = (page) => loginAndGoTo(page, null);
 
-  // Login
-  const lp = new LoginPage(page);
-  await lp.navigate('/Account/Login?ReturnUrl=%2F');
-  await lp.login(aqData.validUser.username, aqData.validUser.password);
-  // Wait until redirected away from login page
-  await page.waitForURL(url => !url.toString().includes('Login'), { timeout: 30000 });
-  await page.waitForLoadState('domcontentloaded');
-
-  return new ActionQueuePage(page);
-}
 
 // =============================================================================
 // GROUP 1 — LIST PAGE
