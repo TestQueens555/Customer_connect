@@ -5,8 +5,7 @@
 'use strict';
 const { test, expect }  = require('@playwright/test');
 const AddNewUserPage     = require('../pages/AddNewUserPage');
-const { loginAndGoTo, unauthAccess, nativeFill, dxPick } = require('../utils/loginHelper');
-const config = require('../utils/config');
+const { loginAndGoTo, unauthAccess, nativeFill, dxPick, waitForFeedback } = require('../utils/loginHelper');
 const d      = require('../test-data/addNewUserData');
 
 // ActionQueue-proven pattern: login returns page; each test navigates separately
@@ -28,8 +27,14 @@ async function loginAndNavigate(page) {
   return new AddNewUserPage(page);
 }
 
+// Real UI path: left sidebar → expand USER MANAGEMENT accordion → click Partners
+// (verifies the nav itself, not just the /Admin/Partners route)
 async function goToPartners(page) {
-  await page.goto(`${config.baseURL}/Admin/Partners`, { waitUntil: 'domcontentloaded' });
+  const umToggle = page.locator('#sidebar [data-title="user management"] .kt-menu-link');
+  await umToggle.click();
+  const partnersLink = page.locator('#sidebar a[href="/Admin/Partners"]');
+  await partnersLink.waitFor({ state: 'visible', timeout: 10000 });
+  await partnersLink.click();
   await page.locator('h1').waitFor({ timeout: 15000 });
   await page.waitForTimeout(1000);
 }
@@ -44,8 +49,28 @@ const closeModal = async (page) => {
   await page.locator('button.um-modal-close').click().catch(() => {});
   await page.waitForTimeout(400);
 };
-// Uses shared waitForFeedback from loginHelper (works across all feedback patterns)
-const successShown = (page) => waitForFeedback(page, 14000);
+// AddNewUser success flow:
+// 1. createBtn.click() → Swal "Create User?" confirmation appears
+// 2. Click .swal2-confirm ("Yes, Create") → toastr "Saved successfully" + modal closes
+const confirmAndWaitSuccess = async (page) => {
+  // Wait for the Swal confirmation dialog
+  try {
+    await page.locator('.swal2-title').waitFor({ timeout: 5000 });
+    const title = await page.locator('.swal2-title').textContent();
+    if (/Create User|Save Changes/i.test(title)) {
+      await page.locator('.swal2-confirm').click();
+    }
+  } catch (_) { /* Swal may not appear if validation failed */ }
+
+  // Wait for toastr success OR modal closure (either confirms success)
+  try {
+    await Promise.race([
+      page.locator('.toast-success, .toast.toast-success').waitFor({ timeout: 8000 }),
+      page.locator('[class*="toast-container"] .toast-message').filter({ hasText: /saved|success/i }).waitFor({ timeout: 8000 }),
+    ]);
+    return true;
+  } catch (_) { return false; }
+};
 
 // ── POSITIVE ──────────────────────────────────────────────────────────────────
 test('TC-AU-007 | Page loads with heading, stats, grid, Add New User button', async ({ page }) => {
@@ -66,16 +91,9 @@ test('TC-AU-001 | Create Partner Admin — Automatic password', async ({ page })
   await dxPick(page, '#fRole .dx-dropdowneditor-button', 'Partner Admin');
   await expect(ap.wrapCustomer).toHaveCSS('display','none');
   await ap.createBtn.click();
-  await page.waitForTimeout(2000);
-  if (!await successShown(page)) {
-    const dbg = await page.evaluate(() => ({
-      feedbackTitle: document.querySelector('#feedbackTitle')?.textContent?.trim(),
-      roleValue:     document.querySelector('#fRole input')?.value,
-      errors:        [...document.querySelectorAll('.um-field.error')].map(e=>e.id)
-    }));
-    throw new Error('No success feedback. State: ' + JSON.stringify(dbg));
-  }
+  expect(await confirmAndWaitSuccess(page)).toBe(true);
   await closeModal(page);
+});
 
 test('TC-AU-002 | Create Partner User — Automatic password', async ({ page }) => {
   const ap = await loginAndNavigate(page);
@@ -88,8 +106,7 @@ test('TC-AU-002 | Create Partner User — Automatic password', async ({ page }) 
   await page.waitForTimeout(500);
   await expect(ap.wrapCustomer).not.toHaveCSS('display','none');
   await ap.createBtn.click();
-  await page.waitForTimeout(2000);
-  expect(await successShown(page)).toBe(true);
+  expect(await confirmAndWaitSuccess(page)).toBe(true);
   await closeModal(page);
 });
 
@@ -105,8 +122,7 @@ test('TC-AU-003 | Create user with Manual password', async ({ page }) => {
   await expect(ap.passwordInput).toBeVisible();
   await page.locator('#fPassword').fill('Test@12345');
   await ap.createBtn.click();
-  await page.waitForTimeout(2000);
-  expect(await successShown(page)).toBe(true);
+  expect(await confirmAndWaitSuccess(page)).toBe(true);
   await closeModal(page);
 });
 
@@ -120,8 +136,7 @@ test('TC-AU-005 | Create user with Inactive status', async ({ page }) => {
   await dxPick(page, '#fRole .dx-dropdowneditor-button', 'Partner Admin');
   await ap.statusInactive.evaluate(el => el.click());
   await ap.createBtn.click();
-  await page.waitForTimeout(2000);
-  expect(await successShown(page)).toBe(true);
+  expect(await confirmAndWaitSuccess(page)).toBe(true);
   await closeModal(page);
 });
 
@@ -151,8 +166,7 @@ test('TC-AU-019 | Single character First Name (min boundary) accepted', async ({
   await page.locator('#fEmail').fill(    u.email);
   await dxPick(page, '#fRole .dx-dropdowneditor-button', 'Partner Admin');
   await ap.createBtn.click();
-  await page.waitForTimeout(2000);
-  expect(await successShown(page)).toBe(true);
+  expect(await confirmAndWaitSuccess(page)).toBe(true);
   await closeModal(page);
 });
 

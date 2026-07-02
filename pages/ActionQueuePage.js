@@ -10,7 +10,7 @@ class ActionQueuePage extends BasePage {
 
     // ── List Page Locators ─────────────────────────────────────────────
     this.pageHeading       = page.locator('h1').filter({ hasText: 'Action Queue' });
-    this.pendingBadge      = page.locator('.stat-badge, [class*=badge]').filter({hasText:/Pending/i}).first();
+    this.pendingBadge      = page.getByText(/Pending Actions/);
     this.searchInput       = page.getByPlaceholder('Search actions...');
     this.exportButton      = page.getByRole('button', { name: /EXPORT/i });
     this.dataGrid          = page.locator('[role="grid"]');
