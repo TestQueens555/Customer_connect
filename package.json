@@ -5,7 +5,6 @@
   "repository": { "type": "git", "url": "git+https://github.com/TestQueens555/Customer_connect.git" },
   "scripts": {
     "test:login":               "npx playwright test tests/login.spec.js --config playwright.config.js",
-    "test:login:vb":            "dotnet test dotnet-tests --filter LoginTests",
     "test:dashboard":           "npx playwright test tests/dashboard.spec.js --config playwright.config.js",
     "test:createticket":        "npx playwright test tests/createTicket.spec.js --config playwright.config.js",
     "test:actionqueue":         "npx playwright test tests/actionQueue.spec.js --config playwright.config.js",
